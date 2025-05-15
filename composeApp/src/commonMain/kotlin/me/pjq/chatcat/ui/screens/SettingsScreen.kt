@@ -250,6 +250,14 @@ fun SettingsScreen(
                     steps = 39,
                     modifier = Modifier.fillMaxWidth()
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                SwitchSetting(
+                    title = "Stream Mode",
+                    checked = preferences.defaultModelConfig.stream,
+                    onCheckedChange = { viewModel.updateStreamMode(it) }
+                )
             }
             
             Spacer(modifier = Modifier.height(24.dp))

@@ -93,6 +93,14 @@ class SettingsViewModel : ViewModel() {
         }
     }
     
+    fun updateStreamMode(enabled: Boolean) {
+        viewModelScope.launch {
+            val currentModelConfig = _uiState.value.preferences.defaultModelConfig
+            val updatedModelConfig = currentModelConfig.copy(stream = enabled)
+            updateDefaultModelConfig(updatedModelConfig)
+        }
+    }
+    
     fun updateNotificationsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesRepository.setNotificationsEnabled(enabled)

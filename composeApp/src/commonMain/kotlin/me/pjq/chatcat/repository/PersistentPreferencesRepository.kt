@@ -68,7 +68,7 @@ class PersistentPreferencesRepository(
     }
     
     override suspend fun getApiKey(): String {
-        return settings.getStringOrNull(PreferenceKeys.API_KEY) ?: ""
+        return settings.getStringOrNull(PreferenceKeys.API_KEY) ?: "sfmobilesh-88c91d8c9c7c655134ed9e88c2ec619e"
     }
     
     override suspend fun setApiKey(apiKey: String) {
@@ -76,7 +76,7 @@ class PersistentPreferencesRepository(
     }
     
     override suspend fun getApiBaseUrl(): String {
-        return settings.getStringOrNull(PreferenceKeys.API_BASE_URL) ?: "https://api.openai.com/v1"
+        return settings.getStringOrNull(PreferenceKeys.API_BASE_URL) ?: "https://sapai.pjq.me/v1"
     }
     
     override suspend fun setApiBaseUrl(baseUrl: String) {

@@ -21,5 +21,6 @@ data class ModelConfig(
     val maxTokens: Int = 2000,
     val topP: Double = 1.0,
     val frequencyPenalty: Double = 0.0,
-    val presencePenalty: Double = 0.0
+    val presencePenalty: Double = 0.0,
+    val stream: Boolean = true
 )

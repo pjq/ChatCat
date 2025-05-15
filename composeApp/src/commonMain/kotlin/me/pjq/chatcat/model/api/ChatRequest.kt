@@ -24,7 +24,8 @@ data class ChatRequest(
                 maxTokens = modelConfig.maxTokens,
                 topP = modelConfig.topP,
                 frequencyPenalty = modelConfig.frequencyPenalty,
-                presencePenalty = modelConfig.presencePenalty
+                presencePenalty = modelConfig.presencePenalty,
+                stream = modelConfig.stream
             )
         }
     }
