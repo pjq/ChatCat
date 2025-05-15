@@ -11,5 +11,6 @@ interface ConversationRepository {
     suspend fun updateConversation(conversation: Conversation): Conversation
     suspend fun deleteConversation(id: String): Boolean
     suspend fun addMessage(conversationId: String, message: Message): Conversation?
+    suspend fun updateMessage(conversationId: String, message: Message): Conversation?
     suspend fun clearConversations(): Boolean
 }

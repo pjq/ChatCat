@@ -29,12 +29,9 @@ class PersistentPreferencesRepository(
         const val API_BASE_URL = "api_base_url"
         const val THEME = "theme"
         const val FONT_SIZE = "font_size"
-        const val OFFLINE_MODE = "offline_mode"
         const val DEFAULT_MODEL_CONFIG = "default_model_config"
-        const val NOTIFICATIONS_ENABLED = "notifications_enabled"
         const val SOUND_EFFECTS_ENABLED = "sound_effects_enabled"
-        const val AUTO_SAVE_ENABLED = "auto_save_enabled"
-        const val AUTO_SAVE_INTERVAL = "auto_save_interval"
+        const val MARKDOWN_ENABLED = "markdown_enabled"
     }
     
     override suspend fun getUserPreferences(): Flow<UserPreferences> {
@@ -44,12 +41,9 @@ class PersistentPreferencesRepository(
                 apiBaseUrl = getApiBaseUrl(),
                 theme = getTheme(),
                 fontSize = getFontSize(),
-                enableOfflineMode = getOfflineModeEnabled(),
                 defaultModelConfig = getDefaultModelConfig(),
-                enableNotifications = getNotificationsEnabled(),
                 enableSoundEffects = getSoundEffectsEnabled(),
-                enableAutoSave = getAutoSaveEnabled(),
-                autoSaveInterval = getAutoSaveInterval()
+                enableMarkdown = getMarkdownEnabled()
             )
         }
     }
@@ -59,16 +53,13 @@ class PersistentPreferencesRepository(
         setApiBaseUrl(preferences.apiBaseUrl)
         setTheme(preferences.theme)
         setFontSize(preferences.fontSize)
-        setOfflineModeEnabled(preferences.enableOfflineMode)
         setDefaultModelConfig(preferences.defaultModelConfig)
-        setNotificationsEnabled(preferences.enableNotifications)
         setSoundEffectsEnabled(preferences.enableSoundEffects)
-        setAutoSaveEnabled(preferences.enableAutoSave)
-        setAutoSaveInterval(preferences.autoSaveInterval)
+        setMarkdownEnabled(preferences.enableMarkdown)
     }
     
     override suspend fun getApiKey(): String {
-        return settings.getStringOrNull(PreferenceKeys.API_KEY) ?: "sfmobilesh-88c91d8c9c7c655134ed9e88c2ec619e"
+        return settings.getStringOrNull(PreferenceKeys.API_KEY) ?: ""
     }
     
     override suspend fun setApiKey(apiKey: String) {
@@ -76,7 +67,7 @@ class PersistentPreferencesRepository(
     }
     
     override suspend fun getApiBaseUrl(): String {
-        return settings.getStringOrNull(PreferenceKeys.API_BASE_URL) ?: "https://sapai.pjq.me/v1"
+        return settings.getStringOrNull(PreferenceKeys.API_BASE_URL) ?: "https://api.openai.com/v1"
     }
     
     override suspend fun setApiBaseUrl(baseUrl: String) {
@@ -109,20 +100,17 @@ class PersistentPreferencesRepository(
         settings.putString(PreferenceKeys.FONT_SIZE, fontSize.name)
     }
     
-    override suspend fun getOfflineModeEnabled(): Boolean {
-        return settings.getBoolean(PreferenceKeys.OFFLINE_MODE, false)
-    }
-    
-    override suspend fun setOfflineModeEnabled(enabled: Boolean) {
-        settings.putBoolean(PreferenceKeys.OFFLINE_MODE, enabled)
-    }
-    
     override suspend fun getDefaultModelConfig(): ModelConfig {
         val modelConfigJson = settings.getStringOrNull(PreferenceKeys.DEFAULT_MODEL_CONFIG)
         return if (modelConfigJson != null) {
             try {
-                json.decodeFromString<ModelConfig>(modelConfigJson)
+                val modelConfig = json.decodeFromString<ModelConfig>(modelConfigJson)
+                // Ensure we're actually using the saved stream value
+                modelConfig
             } catch (e: Exception) {
+                // Log the error if possible
+                println("Error decoding ModelConfig: ${e.message}")
+                // Return default config if there's an error
                 ModelConfig()
             }
         } else {
@@ -131,16 +119,15 @@ class PersistentPreferencesRepository(
     }
     
     override suspend fun setDefaultModelConfig(modelConfig: ModelConfig) {
-        val modelConfigJson = json.encodeToString(modelConfig)
-        settings.putString(PreferenceKeys.DEFAULT_MODEL_CONFIG, modelConfigJson)
-    }
-    
-    override suspend fun getNotificationsEnabled(): Boolean {
-        return settings.getBoolean(PreferenceKeys.NOTIFICATIONS_ENABLED, true)
-    }
-    
-    override suspend fun setNotificationsEnabled(enabled: Boolean) {
-        settings.putBoolean(PreferenceKeys.NOTIFICATIONS_ENABLED, enabled)
+        try {
+            val modelConfigJson = json.encodeToString(modelConfig)
+            settings.putString(PreferenceKeys.DEFAULT_MODEL_CONFIG, modelConfigJson)
+            // Verify the save worked by logging
+            println("Saved ModelConfig: $modelConfigJson")
+        } catch (e: Exception) {
+            // Log the error if possible
+            println("Error encoding ModelConfig: ${e.message}")
+        }
     }
     
     override suspend fun getSoundEffectsEnabled(): Boolean {
@@ -151,19 +138,11 @@ class PersistentPreferencesRepository(
         settings.putBoolean(PreferenceKeys.SOUND_EFFECTS_ENABLED, enabled)
     }
     
-    override suspend fun getAutoSaveEnabled(): Boolean {
-        return settings.getBoolean(PreferenceKeys.AUTO_SAVE_ENABLED, true)
+    override suspend fun getMarkdownEnabled(): Boolean {
+        return settings.getBoolean(PreferenceKeys.MARKDOWN_ENABLED, true)
     }
     
-    override suspend fun setAutoSaveEnabled(enabled: Boolean) {
-        settings.putBoolean(PreferenceKeys.AUTO_SAVE_ENABLED, enabled)
-    }
-    
-    override suspend fun getAutoSaveInterval(): Int {
-        return settings.getInt(PreferenceKeys.AUTO_SAVE_INTERVAL, 5)
-    }
-    
-    override suspend fun setAutoSaveInterval(minutes: Int) {
-        settings.putInt(PreferenceKeys.AUTO_SAVE_INTERVAL, minutes)
+    override suspend fun setMarkdownEnabled(enabled: Boolean) {
+        settings.putBoolean(PreferenceKeys.MARKDOWN_ENABLED, enabled)
     }
 }

@@ -13,7 +13,8 @@ data class UserPreferences(
     val enableNotifications: Boolean = true,
     val enableSoundEffects: Boolean = true,
     val enableAutoSave: Boolean = true,
-    val autoSaveInterval: Int = 5 // in minutes
+    val autoSaveInterval: Int = 5, // in minutes
+    val enableMarkdown: Boolean = true // Enable Markdown rendering by default
 )
 
 @Serializable

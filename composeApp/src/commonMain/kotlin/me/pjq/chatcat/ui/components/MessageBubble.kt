@@ -12,14 +12,18 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import me.pjq.chatcat.di.AppModule
 import me.pjq.chatcat.model.Message
 import me.pjq.chatcat.model.Role
 import me.pjq.chatcat.ui.theme.ChatCatColors
@@ -31,7 +35,9 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun MessageBubble(
     message: Message,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    onCopyMessage: ((String) -> Unit)? = null,
+    onResendMessage: ((Message) -> Unit)? = null
 ) {
     val isUserMessage = message.role == Role.USER
     val alignment = if (isUserMessage) Alignment.End else Alignment.Start
@@ -78,23 +84,51 @@ fun MessageBubble(
                         .background(backgroundColor)
                         .padding(12.dp)
                 ) {
-                    if (message.isError) {
-                        Text(
-                            text = message.content,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    } else {
-                        Text(
-                            text = message.content,
-                            style = MaterialTheme.typography.bodyMedium
-                        )
-                    }
+                    // Use MarkdownText to render message content
+                    MarkdownText(
+                        markdown = message.content,
+                        style = MaterialTheme.typography.bodyMedium,
+                        isError = message.isError
+                    )
                 }
                 
                 // Display attachments if any
                 message.attachments.forEach { attachment ->
                     AttachmentItem(attachment = attachment)
+                }
+                
+                // Action buttons (copy, resend)
+                if (onCopyMessage != null || onResendMessage != null) {
+                    Row(
+                        modifier = Modifier.padding(top = 4.dp)
+                    ) {
+                        // Only show copy button if callback is provided
+                        onCopyMessage?.let {
+                            IconButton(
+                                onClick = { onCopyMessage(message.content) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Text(
+                                    text = "📋", // Copy icon
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                        
+                        // Only show resend button for user messages if callback is provided
+                        if (message.role == Role.USER && onResendMessage != null) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(
+                                onClick = { onResendMessage(message) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Text(
+                                    text = "↩️", // Resend icon
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                    }
                 }
             }
             

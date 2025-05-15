@@ -9,12 +9,17 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Card
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.Divider
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
@@ -47,6 +52,11 @@ fun SettingsScreen(
 ) {
     val uiState by viewModel.uiState.collectAsState()
     val preferences = uiState.preferences
+    
+    // Load available models when API is available
+    if (uiState.isApiAvailable && uiState.availableModels.isEmpty() && !uiState.isLoading) {
+        viewModel.loadAvailableModels()
+    }
     
     Scaffold(
         topBar = {
@@ -82,7 +92,8 @@ fun SettingsScreen(
         ) {
             // API Settings
             SettingsSection(title = "API Settings") {
-                var apiKeyText by remember { mutableStateOf(preferences.apiKey) }
+                // Use remember with key to update when preferences change
+                var apiKeyText by remember(preferences.apiKey) { mutableStateOf(preferences.apiKey) }
                 OutlinedTextField(
                     value = apiKeyText,
                     onValueChange = { 
@@ -97,7 +108,8 @@ fun SettingsScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
-                var apiBaseUrlText by remember { mutableStateOf(preferences.apiBaseUrl) }
+                // Use remember with key to update when preferences change
+                var apiBaseUrlText by remember(preferences.apiBaseUrl) { mutableStateOf(preferences.apiBaseUrl) }
                 OutlinedTextField(
                     value = apiBaseUrlText,
                     onValueChange = { 
@@ -124,6 +136,161 @@ fun SettingsScreen(
                 ) {
                     Text("Save API Settings")
                 }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+            
+            // Model Settings - MOVED HERE FROM BELOW
+            SettingsSection(title = "Model Settings") {
+                // Use remember with key to update when preferences change
+                var temperature by remember(preferences.defaultModelConfig.temperature) { 
+                    mutableStateOf(preferences.defaultModelConfig.temperature) 
+                }
+                // Use remember with key to update when preferences change
+                var maxTokens by remember(preferences.defaultModelConfig.maxTokens) { 
+                    mutableStateOf(preferences.defaultModelConfig.maxTokens.toFloat()) 
+                }
+                // Use remember with key to update when model changes
+                var expanded by remember(preferences.defaultModelConfig.model) { mutableStateOf(false) }
+                
+                // Model dropdown
+                Column {
+                    Text(
+                        text = "Model",
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    
+                    Spacer(modifier = Modifier.height(4.dp))
+                    
+                    Row(
+                        verticalAlignment = Alignment.CenterVertically,
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        // Make the text field clickable to open the dropdown
+                        OutlinedTextField(
+                            value = preferences.defaultModelConfig.model,
+                            onValueChange = { },
+                            label = { Text("Selected Model") },
+                            modifier = Modifier
+                                .weight(1f)
+                                .clickable(enabled = uiState.availableModels.isNotEmpty()) { 
+                                    expanded = true 
+                                },
+                            singleLine = true,
+                            enabled = false,
+                            readOnly = true,
+                            trailingIcon = {
+                                if (uiState.availableModels.isNotEmpty()) {
+                                    Text(
+                                        text = "▼",
+                                        modifier = Modifier.clickable { expanded = true }
+                                    )
+                                }
+                            }
+                        )
+                        
+                        Spacer(modifier = Modifier.width(8.dp))
+                        
+                        androidx.compose.material3.Button(
+                            onClick = { expanded = true },
+                            enabled = uiState.availableModels.isNotEmpty()
+                        ) {
+                            Text("Select")
+                        }
+                        
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            if (uiState.isLoading) {
+                                DropdownMenuItem(
+                                    text = { 
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
+                                            Text("Loading models...") 
+                                        }
+                                    },
+                                    onClick = { }
+                                )
+                            } else {
+                                uiState.availableModels.forEach { model ->
+                                DropdownMenuItem(
+                                    text = { Text(model) },
+                                    onClick = {
+                                        viewModel.updateModel(model)
+                                        expanded = false
+                                    }
+                                )
+                                }
+                            }
+                        }
+                    }
+                    
+                    if (uiState.availableModels.isEmpty() && !uiState.isLoading) {
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Connect to API to load available models",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.error
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "Temperature: ${temperature}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Slider(
+                    value = temperature.toFloat(),
+                    onValueChange = { 
+                        temperature = it.toDouble()
+                        viewModel.updateDefaultModelConfig(
+                            preferences.defaultModelConfig.copy(temperature = it.toDouble())
+                        )
+                    },
+                    valueRange = 0f..1f,
+                    steps = 10,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = "Max Tokens: ${maxTokens.toInt()}",
+                    style = MaterialTheme.typography.bodyMedium
+                )
+                
+                Slider(
+                    value = maxTokens,
+                    onValueChange = { 
+                        maxTokens = it
+                        viewModel.updateDefaultModelConfig(
+                            preferences.defaultModelConfig.copy(maxTokens = it.toInt())
+                        )
+                    },
+                    valueRange = 100f..4000f,
+                    steps = 39,
+                    modifier = Modifier.fillMaxWidth()
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Add a state variable to properly track the stream mode toggle
+                var streamMode by remember(preferences.defaultModelConfig.stream) { 
+                    mutableStateOf(preferences.defaultModelConfig.stream) 
+                }
+                
+                SwitchSetting(
+                    title = "Stream Mode",
+                    checked = streamMode,
+                    onCheckedChange = { 
+                        streamMode = it
+                        viewModel.updateStreamMode(it) 
+                    }
+                )
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -191,125 +358,13 @@ fun SettingsScreen(
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Model Settings
-            SettingsSection(title = "Model Settings") {
-                var model by remember { mutableStateOf(preferences.defaultModelConfig.model) }
-                var temperature by remember { mutableStateOf(preferences.defaultModelConfig.temperature) }
-                var maxTokens by remember { mutableStateOf(preferences.defaultModelConfig.maxTokens.toFloat()) }
-                
-                OutlinedTextField(
-                    value = model,
-                    onValueChange = { 
-                        model = it
-                        viewModel.updateDefaultModelConfig(
-                            preferences.defaultModelConfig.copy(model = it)
-                        )
-                    },
-                    label = { Text("Model") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = true
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = "Temperature: ${temperature}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                
-                Slider(
-                    value = temperature.toFloat(),
-                    onValueChange = { 
-                        temperature = it.toDouble()
-                        viewModel.updateDefaultModelConfig(
-                            preferences.defaultModelConfig.copy(temperature = it.toDouble())
-                        )
-                    },
-                    valueRange = 0f..1f,
-                    steps = 10,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = "Max Tokens: ${maxTokens.toInt()}",
-                    style = MaterialTheme.typography.bodyMedium
-                )
-                
-                Slider(
-                    value = maxTokens,
-                    onValueChange = { 
-                        maxTokens = it
-                        viewModel.updateDefaultModelConfig(
-                            preferences.defaultModelConfig.copy(maxTokens = it.toInt())
-                        )
-                    },
-                    valueRange = 100f..4000f,
-                    steps = 39,
-                    modifier = Modifier.fillMaxWidth()
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                SwitchSetting(
-                    title = "Stream Mode",
-                    checked = preferences.defaultModelConfig.stream,
-                    onCheckedChange = { viewModel.updateStreamMode(it) }
-                )
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
-            
             // Other Settings
             SettingsSection(title = "Other Settings") {
-                SwitchSetting(
-                    title = "Offline Mode",
-                    checked = preferences.enableOfflineMode,
-                    onCheckedChange = { viewModel.updateOfflineMode(it) }
-                )
-                
-                SwitchSetting(
-                    title = "Notifications",
-                    checked = preferences.enableNotifications,
-                    onCheckedChange = { viewModel.updateNotificationsEnabled(it) }
-                )
-                
                 SwitchSetting(
                     title = "Sound Effects",
                     checked = preferences.enableSoundEffects,
                     onCheckedChange = { viewModel.updateSoundEffectsEnabled(it) }
                 )
-                
-                SwitchSetting(
-                    title = "Auto Save",
-                    checked = preferences.enableAutoSave,
-                    onCheckedChange = { viewModel.updateAutoSaveEnabled(it) }
-                )
-                
-                if (preferences.enableAutoSave) {
-                    var autoSaveInterval by remember { mutableStateOf(preferences.autoSaveInterval.toFloat()) }
-                    
-                    Text(
-                        text = "Auto Save Interval: ${autoSaveInterval.toInt()} minutes",
-                        style = MaterialTheme.typography.bodyMedium,
-                        modifier = Modifier.padding(start = 32.dp)
-                    )
-                    
-                    Slider(
-                        value = autoSaveInterval,
-                        onValueChange = { 
-                            autoSaveInterval = it
-                            viewModel.updateAutoSaveInterval(it.toInt())
-                        },
-                        valueRange = 1f..30f,
-                        steps = 29,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 32.dp)
-                    )
-                }
             }
             
             Spacer(modifier = Modifier.height(32.dp))
@@ -411,6 +466,7 @@ fun SwitchSetting(
         verticalAlignment = Alignment.CenterVertically,
         modifier = Modifier
             .fillMaxWidth()
+            .clickable { onCheckedChange(!checked) }
             .padding(vertical = 8.dp)
     ) {
         Text(

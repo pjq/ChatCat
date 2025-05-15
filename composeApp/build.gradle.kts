@@ -70,13 +70,22 @@ kotlin {
             implementation(libs.androidx.lifecycle.runtimeCompose)
             
             // Networking
-            implementation("io.ktor:ktor-client-core:2.3.9")
-            implementation("io.ktor:ktor-client-content-negotiation:2.3.9")
-            implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.9")
+            implementation("io.ktor:ktor-client-core:3.1.3")
+            implementation("io.ktor:ktor-client-content-negotiation:3.1.3")
+            implementation("io.ktor:ktor-serialization-kotlinx-json:3.1.3")
             
-            // Ktor common logging
-            implementation("io.ktor:ktor-client-logging:2.3.9")
+            // Additional Ktor dependencies needed for OpenAI client
+            implementation("io.ktor:ktor-client-logging:3.1.3")
+            implementation("io.ktor:ktor-client-auth:3.1.3")
+            // HttpTimeout is part of these modules
+            implementation("io.ktor:ktor-client-cio:3.1.3")
+            // Add explicit dependency for HttpTimeout
+            implementation("io.ktor:ktor-client-core:3.1.3")
             
+            // OpenAI Kotlin client
+             implementation("com.aallam.openai:openai-client:4.0.1")
+            // implementation("io.ktor:ktor-client-core-jvm:3.1.3")
+
             // Serialization
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             
@@ -93,18 +102,29 @@ kotlin {
             // Navigation
             implementation("moe.tlaster:precompose:1.5.10")
             implementation("moe.tlaster:precompose-viewmodel:1.5.10")
+            
+            // Markdown
+            implementation("com.mikepenz:multiplatform-markdown-renderer:0.34.0")
+            // Material 3 defaults for Markdown
+//            implementation("com.mikepenz:multiplatform-markdown-renderer-m3:0.10.0")
         }
         
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
             // Platform-specific Ktor HTTP client engine
-            implementation("io.ktor:ktor-client-android:2.3.9")
+            implementation("io.ktor:ktor-client-android:3.1.3")
+            // OpenAI client engine - use implementation instead of runtimeOnly
+            implementation("io.ktor:ktor-client-okhttp:3.1.3")
+            // Add HttpTimeout support explicitly for Android
+            implementation("io.ktor:ktor-client-core-jvm:3.1.3")
         }
         
         iosMain.dependencies {
             // Platform-specific Ktor HTTP client engine
-            implementation("io.ktor:ktor-client-darwin:2.3.9")
+            implementation("io.ktor:ktor-client-darwin:3.1.3")
+            // OpenAI client engine - use implementation instead of runtimeOnly
+            implementation("io.ktor:ktor-client-darwin:3.1.3")
         }
         
         commonTest.dependencies {
@@ -115,12 +135,17 @@ kotlin {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
             // Platform-specific Ktor HTTP client engine
-            implementation("io.ktor:ktor-client-java:2.3.9")
+            implementation("io.ktor:ktor-client-java:3.1.3")
+            // OpenAI client engine - use implementation instead of runtimeOnly
+            implementation("io.ktor:ktor-client-okhttp:3.1.3")
         }
         
         wasmJsMain.dependencies {
             // Platform-specific Ktor HTTP client engine
-            implementation("io.ktor:ktor-client-js:2.3.9")
+            implementation("io.ktor:ktor-client-js:3.1.3")
+            // OpenAI client engine - use implementation instead of runtimeOnly
+            implementation("io.ktor:ktor-client-js:3.1.3")
+            
         }
     }
 }

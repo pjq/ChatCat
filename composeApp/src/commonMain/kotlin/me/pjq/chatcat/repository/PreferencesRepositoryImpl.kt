@@ -52,28 +52,12 @@ class PreferencesRepositoryImpl : PreferencesRepository {
         preferences = preferences.copy(fontSize = fontSize)
     }
     
-    override suspend fun getOfflineModeEnabled(): Boolean {
-        return preferences.enableOfflineMode
-    }
-    
-    override suspend fun setOfflineModeEnabled(enabled: Boolean) {
-        preferences = preferences.copy(enableOfflineMode = enabled)
-    }
-    
     override suspend fun getDefaultModelConfig(): ModelConfig {
         return preferences.defaultModelConfig
     }
     
     override suspend fun setDefaultModelConfig(modelConfig: ModelConfig) {
         preferences = preferences.copy(defaultModelConfig = modelConfig)
-    }
-    
-    override suspend fun getNotificationsEnabled(): Boolean {
-        return preferences.enableNotifications
-    }
-    
-    override suspend fun setNotificationsEnabled(enabled: Boolean) {
-        preferences = preferences.copy(enableNotifications = enabled)
     }
     
     override suspend fun getSoundEffectsEnabled(): Boolean {
@@ -84,19 +68,11 @@ class PreferencesRepositoryImpl : PreferencesRepository {
         preferences = preferences.copy(enableSoundEffects = enabled)
     }
     
-    override suspend fun getAutoSaveEnabled(): Boolean {
-        return preferences.enableAutoSave
+    override suspend fun getMarkdownEnabled(): Boolean {
+        return preferences.enableMarkdown
     }
     
-    override suspend fun setAutoSaveEnabled(enabled: Boolean) {
-        preferences = preferences.copy(enableAutoSave = enabled)
-    }
-    
-    override suspend fun getAutoSaveInterval(): Int {
-        return preferences.autoSaveInterval
-    }
-    
-    override suspend fun setAutoSaveInterval(minutes: Int) {
-        preferences = preferences.copy(autoSaveInterval = minutes)
+    override suspend fun setMarkdownEnabled(enabled: Boolean) {
+        preferences = preferences.copy(enableMarkdown = enabled)
     }
 }

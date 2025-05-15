@@ -12,12 +12,14 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
@@ -35,7 +37,6 @@ import androidx.compose.ui.unit.dp
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
 fun ChatInput(
     onSendMessage: (String) -> Unit,
@@ -45,96 +46,103 @@ fun ChatInput(
 ) {
     var messageText by remember { mutableStateOf("") }
     
-    Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        tonalElevation = 2.dp
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 12.dp, vertical = 8.dp),
+        shape = RoundedCornerShape(24.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+        ),
+        elevation = CardDefaults.cardElevation(
+            defaultElevation = 0.dp
+        )
     ) {
-        Box(
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
-                .padding(horizontal = 16.dp, vertical = 8.dp)
                 .fillMaxWidth()
+                .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
-            Row(
-                verticalAlignment = Alignment.CenterVertically,
-                modifier = Modifier.fillMaxWidth()
+            // Attachment button - more subtle
+            IconButton(
+                onClick = onAttachFile,
+                modifier = Modifier.size(40.dp)
             ) {
-                // Attachment button
-                IconButton(
-                    onClick = onAttachFile,
-                    modifier = Modifier.size(48.dp)
-                ) {
-                    Text(
-                        text = "📎",
-                        style = MaterialTheme.typography.titleLarge
-                    )
-                }
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                // Text input field
-                OutlinedTextField(
-                    value = messageText,
-                    onValueChange = { messageText = it },
-                    placeholder = { Text("Type a message...") },
-                    modifier = Modifier
-                        .weight(1f)
-                        .height(56.dp),
-                    shape = RoundedCornerShape(28.dp),
-                    keyboardOptions = KeyboardOptions(
-                        capitalization = KeyboardCapitalization.Sentences,
-                        keyboardType = KeyboardType.Text,
-                        imeAction = ImeAction.Send
-                    ),
-                    keyboardActions = KeyboardActions(
-                        onSend = {
-                            if (messageText.isNotBlank() && !isLoading) {
-                                onSendMessage(messageText)
-                                messageText = ""
-                            }
-                        }
-                    ),
-                    singleLine = false,
-                    maxLines = 5,
-                    colors = TextFieldDefaults.colors(
-                        focusedContainerColor = Color.Transparent,
-                        unfocusedContainerColor = Color.Transparent,
-                        disabledContainerColor = Color.Transparent,
-                        focusedIndicatorColor = MaterialTheme.colorScheme.primary,
-                        unfocusedIndicatorColor = MaterialTheme.colorScheme.outline
-                    )
+                Text(
+                    text = "📎",
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
-                
-                Spacer(modifier = Modifier.width(8.dp))
-                
-                // Send button
-                IconButton(
-                    onClick = {
+            }
+            
+            // Text input field - modern style with no visible outline
+            TextField(
+                value = messageText,
+                onValueChange = { messageText = it },
+                placeholder = { 
+                    Text(
+                        "Type a message...",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    ) 
+                },
+                modifier = Modifier
+                    .weight(1f)
+                    .height(56.dp),
+                keyboardOptions = KeyboardOptions(
+                    capitalization = KeyboardCapitalization.Sentences,
+                    keyboardType = KeyboardType.Text,
+                    imeAction = ImeAction.Send
+                ),
+                keyboardActions = KeyboardActions(
+                    onSend = {
                         if (messageText.isNotBlank() && !isLoading) {
                             onSendMessage(messageText)
                             messageText = ""
                         }
-                    },
-                    enabled = messageText.isNotBlank() && !isLoading,
-                    modifier = Modifier
-                        .size(48.dp)
-                        .clip(CircleShape)
-                ) {
-                    if (isLoading) {
-                        Text(
-                            text = "⏳",
-                            style = MaterialTheme.typography.titleLarge
-                        )
-                    } else {
-                        Text(
-                            text = "➤",
-                            style = MaterialTheme.typography.titleLarge,
-                            color = if (messageText.isNotBlank()) 
-                                MaterialTheme.colorScheme.primary 
-                            else 
-                                MaterialTheme.colorScheme.outline
-                        )
                     }
+                ),
+                singleLine = false,
+                maxLines = 5,
+                colors = TextFieldDefaults.colors(
+                    focusedContainerColor = Color.Transparent,
+                    unfocusedContainerColor = Color.Transparent,
+                    disabledContainerColor = Color.Transparent,
+                    focusedIndicatorColor = Color.Transparent,
+                    unfocusedIndicatorColor = Color.Transparent,
+                    cursorColor = MaterialTheme.colorScheme.primary
+                )
+            )
+            
+            // Modern send button
+            IconButton(
+                onClick = {
+                    if (messageText.isNotBlank() && !isLoading) {
+                        onSendMessage(messageText)
+                        messageText = ""
+                    }
+                },
+                enabled = messageText.isNotBlank() && !isLoading,
+                modifier = Modifier
+                    .size(40.dp)
+                    .clip(CircleShape)
+            ) {
+                if (isLoading) {
+                    Text(
+                        text = "⏳",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                } else {
+                    Text(
+                        text = "➤",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (messageText.isNotBlank()) 
+                            MaterialTheme.colorScheme.primary 
+                        else 
+                            MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)
+                    )
                 }
             }
         }

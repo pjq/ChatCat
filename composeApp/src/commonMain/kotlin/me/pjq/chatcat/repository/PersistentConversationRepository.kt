@@ -136,6 +136,29 @@ class PersistentConversationRepository(
         return null
     }
     
+    override suspend fun updateMessage(conversationId: String, message: Message): Conversation? {
+        val index = conversations.indexOfFirst { it.id == conversationId }
+        if (index != -1) {
+            val conversation = conversations[index]
+            val messageIndex = conversation.messages.indexOfFirst { it.id == message.id }
+            
+            if (messageIndex != -1) {
+                val updatedMessages = conversation.messages.toMutableList()
+                updatedMessages[messageIndex] = message
+                
+                val updatedConversation = conversation.copy(
+                    messages = updatedMessages,
+                    updatedAt = Clock.System.now()
+                )
+                conversations[index] = updatedConversation
+                saveConversation(updatedConversation)
+                updateFlow()
+                return updatedConversation
+            }
+        }
+        return null
+    }
+    
     override suspend fun clearConversations(): Boolean {
         // Remove all conversation entries
         conversations.forEach { conversation ->
@@ -150,6 +173,8 @@ class PersistentConversationRepository(
     }
     
     private fun updateFlow() {
-        conversationsFlow.value = conversations.toList()
+        // Sort conversations by updatedAt in descending order (newest first)
+        val sortedConversations = conversations.sortedByDescending { it.updatedAt }
+        conversationsFlow.value = sortedConversations
     }
 }

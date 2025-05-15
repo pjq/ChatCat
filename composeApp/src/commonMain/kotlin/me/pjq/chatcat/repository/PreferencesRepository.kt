@@ -22,21 +22,12 @@ interface PreferencesRepository {
     suspend fun getFontSize(): FontSize
     suspend fun setFontSize(fontSize: FontSize)
     
-    suspend fun getOfflineModeEnabled(): Boolean
-    suspend fun setOfflineModeEnabled(enabled: Boolean)
-    
     suspend fun getDefaultModelConfig(): ModelConfig
     suspend fun setDefaultModelConfig(modelConfig: ModelConfig)
-    
-    suspend fun getNotificationsEnabled(): Boolean
-    suspend fun setNotificationsEnabled(enabled: Boolean)
     
     suspend fun getSoundEffectsEnabled(): Boolean
     suspend fun setSoundEffectsEnabled(enabled: Boolean)
     
-    suspend fun getAutoSaveEnabled(): Boolean
-    suspend fun setAutoSaveEnabled(enabled: Boolean)
-    
-    suspend fun getAutoSaveInterval(): Int
-    suspend fun setAutoSaveInterval(minutes: Int)
+    suspend fun getMarkdownEnabled(): Boolean
+    suspend fun setMarkdownEnabled(enabled: Boolean)
 }

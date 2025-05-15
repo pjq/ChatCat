@@ -15,10 +15,12 @@ import me.pjq.chatcat.model.Theme
 import me.pjq.chatcat.model.UserPreferences
 import me.pjq.chatcat.repository.PreferencesRepository
 import me.pjq.chatcat.service.ChatService
+import me.pjq.chatcat.service.OpenAIClientChatService
 
 class SettingsViewModel : ViewModel() {
     private val preferencesRepository: PreferencesRepository = AppModule.preferencesRepository
     private val chatService: ChatService = AppModule.chatService
+    private val modelService: OpenAIClientChatService = AppModule.modelService
     
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()
@@ -40,6 +42,32 @@ class SettingsViewModel : ViewModel() {
         viewModelScope.launch {
             val isAvailable = chatService.isApiAvailable()
             _uiState.update { it.copy(isApiAvailable = isAvailable) }
+        }
+    }
+    
+    fun loadAvailableModels() {
+        viewModelScope.launch {
+            _uiState.update { it.copy(isLoading = true) }
+            try {
+                val models = modelService.listModels()
+                // If no models are returned, use some default models for testing
+                val modelList = if (models.isEmpty()) {
+                    listOf("gpt-4o", "gpt-4", "gpt-3.5-turbo", "claude-3-opus", "claude-3-sonnet")
+                } else {
+                    models
+                }
+                _uiState.update { it.copy(availableModels = modelList, isLoading = false) }
+            } catch (e: Exception) {
+                // Use default models if there's an error
+                val defaultModels = listOf("gpt-4o", "gpt-4", "gpt-3.5-turbo", "claude-3-opus", "claude-3-sonnet")
+                _uiState.update { 
+                    it.copy(
+                        availableModels = defaultModels, 
+                        isLoading = false,
+                        error = e.message
+                    ) 
+                }
+            }
         }
     }
     
@@ -77,19 +105,19 @@ class SettingsViewModel : ViewModel() {
         }
     }
     
-    fun updateOfflineMode(enabled: Boolean) {
-        viewModelScope.launch {
-            preferencesRepository.setOfflineModeEnabled(enabled)
-            val preferences = _uiState.value.preferences.copy(enableOfflineMode = enabled)
-            preferencesRepository.updateUserPreferences(preferences)
-        }
-    }
-    
     fun updateDefaultModelConfig(modelConfig: ModelConfig) {
         viewModelScope.launch {
             preferencesRepository.setDefaultModelConfig(modelConfig)
             val preferences = _uiState.value.preferences.copy(defaultModelConfig = modelConfig)
             preferencesRepository.updateUserPreferences(preferences)
+        }
+    }
+    
+    fun updateModel(model: String) {
+        viewModelScope.launch {
+            val currentModelConfig = _uiState.value.preferences.defaultModelConfig
+            val updatedModelConfig = currentModelConfig.copy(model = model)
+            updateDefaultModelConfig(updatedModelConfig)
         }
     }
     
@@ -101,14 +129,6 @@ class SettingsViewModel : ViewModel() {
         }
     }
     
-    fun updateNotificationsEnabled(enabled: Boolean) {
-        viewModelScope.launch {
-            preferencesRepository.setNotificationsEnabled(enabled)
-            val preferences = _uiState.value.preferences.copy(enableNotifications = enabled)
-            preferencesRepository.updateUserPreferences(preferences)
-        }
-    }
-    
     fun updateSoundEffectsEnabled(enabled: Boolean) {
         viewModelScope.launch {
             preferencesRepository.setSoundEffectsEnabled(enabled)
@@ -117,18 +137,10 @@ class SettingsViewModel : ViewModel() {
         }
     }
     
-    fun updateAutoSaveEnabled(enabled: Boolean) {
+    fun updateMarkdownEnabled(enabled: Boolean) {
         viewModelScope.launch {
-            preferencesRepository.setAutoSaveEnabled(enabled)
-            val preferences = _uiState.value.preferences.copy(enableAutoSave = enabled)
-            preferencesRepository.updateUserPreferences(preferences)
-        }
-    }
-    
-    fun updateAutoSaveInterval(minutes: Int) {
-        viewModelScope.launch {
-            preferencesRepository.setAutoSaveInterval(minutes)
-            val preferences = _uiState.value.preferences.copy(autoSaveInterval = minutes)
+            preferencesRepository.setMarkdownEnabled(enabled)
+            val preferences = _uiState.value.preferences.copy(enableMarkdown = enabled)
             preferencesRepository.updateUserPreferences(preferences)
         }
     }
@@ -138,5 +150,6 @@ data class SettingsUiState(
     val preferences: UserPreferences = UserPreferences(),
     val isApiAvailable: Boolean = false,
     val isLoading: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val availableModels: List<String> = emptyList()
 )

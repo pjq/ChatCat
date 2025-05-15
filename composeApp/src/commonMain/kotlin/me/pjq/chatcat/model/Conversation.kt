@@ -16,7 +16,7 @@ data class Conversation(
 
 @Serializable
 data class ModelConfig(
-    val model: String = "gpt-3.5-turbo",
+    val model: String = "gpt-4o",
     val temperature: Double = 0.7,
     val maxTokens: Int = 2000,
     val topP: Double = 1.0,

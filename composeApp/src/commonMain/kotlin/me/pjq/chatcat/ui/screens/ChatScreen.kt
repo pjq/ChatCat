@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Divider
 import androidx.compose.material3.DrawerValue
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -32,12 +33,16 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
 import me.pjq.chatcat.model.Message
+import me.pjq.chatcat.util.ClipboardUtil
 import me.pjq.chatcat.ui.components.ChatInput
 import me.pjq.chatcat.ui.components.ConversationListItem
 import me.pjq.chatcat.ui.components.MessageBubble
@@ -210,10 +215,42 @@ fun ChatScreen(
                 val messages = uiState.currentConversation?.messages ?: emptyList()
                 val listState = rememberLazyListState()
                 
-                // Auto-scroll to bottom when new messages arrive
-                LaunchedEffect(messages.size) {
+                // Enhanced auto-scroll to handle both new messages and streaming updates
+                LaunchedEffect(messages.size, uiState.isStreaming) {
                     if (messages.isNotEmpty()) {
+                        // Auto-scroll when either:
+                        // 1. A new message is added (size changes)
+                        // 2. Currently streaming (content is being updated in the last message)
                         listState.animateScrollToItem(messages.size - 1)
+                    }
+                }
+                
+                // Also auto-scroll when streaming stops (to ensure we catch the final content)
+                LaunchedEffect(uiState.isLoading) {
+                    if (!uiState.isLoading && messages.isNotEmpty()) {
+                        listState.animateScrollToItem(messages.size - 1)
+                    }
+                }
+                
+                // We'll use a simpler approach for showing copy confirmation
+                var showCopyConfirmation by remember { mutableStateOf(false) }
+                var copyConfirmationMessage by remember { mutableStateOf("") }
+                
+                // Show copy confirmation if needed
+                if (showCopyConfirmation) {
+                    Box(
+                        modifier = Modifier.fillMaxWidth().padding(16.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Snackbar {
+                            Text(copyConfirmationMessage)
+                        }
+                    }
+                    
+                    // Auto-hide after a delay
+                    LaunchedEffect(showCopyConfirmation) {
+                        kotlinx.coroutines.delay(2000)
+                        showCopyConfirmation = false
                     }
                 }
                 
@@ -224,10 +261,21 @@ fun ChatScreen(
                         .fillMaxWidth()
                 ) {
                     items(messages) { message ->
-                        MessageBubble(message = message)
+                        MessageBubble(
+                            message = message,
+                            onCopyMessage = { content ->
+                                // Use the ClipboardUtil to copy text to clipboard
+                                ClipboardUtil.copyToClipboard(content)
+                                showCopyConfirmation = true
+                                copyConfirmationMessage = "Message copied to clipboard"
+                            },
+                            onResendMessage = { msg ->
+                                viewModel.resendMessage(msg)
+                            }
+                        )
                     }
                     
-                    // Show loading indicator if waiting for response
+                    // Show loading or streaming indicator if waiting for response
                     if (uiState.isLoading) {
                         item {
                             Box(
@@ -237,7 +285,7 @@ fun ChatScreen(
                                 contentAlignment = Alignment.Center
                             ) {
                                 Text(
-                                    text = "⏳ Thinking...",
+                                    text = if (uiState.isStreaming) "✏️ Writing..." else "⏳ Thinking...",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
