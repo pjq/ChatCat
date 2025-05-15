@@ -36,7 +36,7 @@ class SettingsViewModel : ViewModel() {
         }
     }
     
-    private fun checkApiAvailability() {
+    fun checkApiAvailability() {
         viewModelScope.launch {
             val isAvailable = chatService.isApiAvailable()
             _uiState.update { it.copy(isApiAvailable = isAvailable) }

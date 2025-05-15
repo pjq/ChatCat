@@ -42,6 +42,7 @@ DerivedData/
 *.ipa
 *.dSYM.zip
 *.dSYM
+.kotlin
 
 # MacOS
 .DS_Store

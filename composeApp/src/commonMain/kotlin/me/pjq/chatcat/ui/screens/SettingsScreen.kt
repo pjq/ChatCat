@@ -1,5 +1,6 @@
 package me.pjq.chatcat.ui.screens
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -56,6 +57,7 @@ fun SettingsScreen(
                         text = "←",
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.padding(8.dp)
+                            .clickable { onNavigateBack() }
                     )
                 },
                 actions = {
@@ -80,23 +82,48 @@ fun SettingsScreen(
         ) {
             // API Settings
             SettingsSection(title = "API Settings") {
+                var apiKeyText by remember { mutableStateOf(preferences.apiKey) }
                 OutlinedTextField(
-                    value = preferences.apiKey,
-                    onValueChange = { viewModel.updateApiKey(it) },
+                    value = apiKeyText,
+                    onValueChange = { 
+                        apiKeyText = it
+                        viewModel.updateApiKey(it) 
+                    },
                     label = { Text("API Key") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = true
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
+                var apiBaseUrlText by remember { mutableStateOf(preferences.apiBaseUrl) }
                 OutlinedTextField(
-                    value = preferences.apiBaseUrl,
-                    onValueChange = { viewModel.updateApiBaseUrl(it) },
+                    value = apiBaseUrlText,
+                    onValueChange = { 
+                        apiBaseUrlText = it
+                        viewModel.updateApiBaseUrl(it) 
+                    },
                     label = { Text("API Base URL") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = true
                 )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Save button for API settings
+                androidx.compose.material3.Button(
+                    onClick = {
+                        // Explicitly save the settings
+                        viewModel.updateApiKey(apiKeyText)
+                        viewModel.updateApiBaseUrl(apiBaseUrlText)
+                        viewModel.checkApiAvailability()
+                    },
+                    modifier = Modifier.align(Alignment.End)
+                ) {
+                    Text("Save API Settings")
+                }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
@@ -180,7 +207,8 @@ fun SettingsScreen(
                     },
                     label = { Text("Model") },
                     modifier = Modifier.fillMaxWidth(),
-                    singleLine = true
+                    singleLine = true,
+                    enabled = true
                 )
                 
                 Spacer(modifier = Modifier.height(16.dp))
