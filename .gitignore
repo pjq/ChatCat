@@ -1,0 +1,93 @@
+# Gradle files
+.gradle/
+build/
+**/build/
+local.properties
+
+# Compiled class files
+*.class
+
+# Log files
+*.log
+**/log/
+
+# IntelliJ IDEA
+/.idea/
+*.iml
+*.iws
+*.ipr
+.idea/
+*.iws
+*.ipr
+out/
+
+# Android Studio
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+output.json
+
+# Xcode
+xcuserdata/
+*.xcodeproj/*
+!*.xcodeproj/project.pbxproj
+!*.xcodeproj/xcshareddata/
+!*.xcworkspace/contents.xcworkspacedata
+.build/
+build/
+DerivedData/
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+
+# MacOS
+.DS_Store
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Node modules (for web)
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+
+# Generated files
+/gen
+
+# Configuration files with sensitive data
+local.properties
+**/secrets.properties
+**/*.keystore
+**/*.jks
+**/*.p12
+**/*.pem
+
+# Temporary files
+*~
+.*.swp
+.*.swo
+*.tmp
+*.bak
+
+# VS Code
+.vscode/
+.classpath
+.project
+.settings/
+
+# Kotlin/Native
+*.klib
+*.kexe
+
+# Web/WASM specific
+*.wasm
+/dist
+
+# Test output
+**/test-output/
