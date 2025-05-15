@@ -57,19 +57,8 @@ kotlin {
     sourceSets {
         val desktopMain by getting
         val wasmJsMain by getting
-        val iosMain by getting
+        // val iosMain by getting
         
-        androidMain.dependencies {
-            implementation(compose.preview)
-            implementation(libs.androidx.activity.compose)
-            implementation("com.russhwolf:multiplatform-settings-android:1.1.1")
-            implementation("com.russhwolf:multiplatform-settings-coroutines:1.1.1")
-        }
-        
-        iosMain.dependencies {
-            implementation("com.russhwolf:multiplatform-settings-apple:1.1.1")
-            implementation("com.russhwolf:multiplatform-settings-coroutines:1.1.1")
-        }
         commonMain.dependencies {
             implementation(compose.runtime)
             implementation(compose.foundation)
@@ -85,10 +74,13 @@ kotlin {
             implementation("io.ktor:ktor-client-content-negotiation:2.3.9")
             implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.9")
             
+            // Ktor common logging
+            implementation("io.ktor:ktor-client-logging:2.3.9")
+            
             // Serialization
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             
-            // Storage
+            // Storage - use the same version for all platforms
             implementation("com.russhwolf:multiplatform-settings:1.1.1")
             implementation("com.russhwolf:multiplatform-settings-coroutines:1.1.1")
             
@@ -102,19 +94,33 @@ kotlin {
             implementation("moe.tlaster:precompose:1.5.10")
             implementation("moe.tlaster:precompose-viewmodel:1.5.10")
         }
+        
+        androidMain.dependencies {
+            implementation(compose.preview)
+            implementation(libs.androidx.activity.compose)
+            // Platform-specific Ktor HTTP client engine
+            implementation("io.ktor:ktor-client-android:2.3.9")
+        }
+        
+        iosMain.dependencies {
+            // Platform-specific Ktor HTTP client engine
+            implementation("io.ktor:ktor-client-darwin:2.3.9")
+        }
+        
         commonTest.dependencies {
             implementation(libs.kotlin.test)
         }
+        
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
-            implementation("com.russhwolf:multiplatform-settings-jvm:1.1.1")
-            implementation("com.russhwolf:multiplatform-settings-coroutines-jvm:1.1.1")
+            // Platform-specific Ktor HTTP client engine
+            implementation("io.ktor:ktor-client-java:2.3.9")
         }
         
         wasmJsMain.dependencies {
-            implementation("com.russhwolf:multiplatform-settings-js:1.1.1")
-            implementation("com.russhwolf:multiplatform-settings-coroutines-js:1.1.1")
+            // Platform-specific Ktor HTTP client engine
+            implementation("io.ktor:ktor-client-js:2.3.9")
         }
     }
 }

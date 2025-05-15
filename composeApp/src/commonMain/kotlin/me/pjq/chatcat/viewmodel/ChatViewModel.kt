@@ -17,8 +17,8 @@ import me.pjq.chatcat.service.ChatService
 import java.util.UUID
 
 class ChatViewModel : ViewModel() {
-    private val conversationRepository: ConversationRepository = AppModule.getConversationRepository()
-    private val chatService: ChatService = AppModule.getChatService()
+    private val conversationRepository: ConversationRepository = AppModule.conversationRepository
+    private val chatService: ChatService = AppModule.chatService
     
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()

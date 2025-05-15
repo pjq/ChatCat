@@ -17,8 +17,8 @@ import me.pjq.chatcat.repository.PreferencesRepository
 import me.pjq.chatcat.service.ChatService
 
 class SettingsViewModel : ViewModel() {
-    private val preferencesRepository: PreferencesRepository = AppModule.getPreferencesRepository()
-    private val chatService: ChatService = AppModule.getChatService()
+    private val preferencesRepository: PreferencesRepository = AppModule.preferencesRepository
+    private val chatService: ChatService = AppModule.chatService
     
     private val _uiState = MutableStateFlow(SettingsUiState())
     val uiState: StateFlow<SettingsUiState> = _uiState.asStateFlow()

@@ -87,48 +87,50 @@ class OpenAIChatService(
     override suspend fun sendMessageSync(
         messages: List<Message>,
         modelConfig: ModelConfig
-    ): Result<Message> = try {
-        val apiKey = preferencesRepository.getApiKey()
-        val baseUrl = preferencesRepository.getApiBaseUrl()
-        
-        if (apiKey.isBlank()) {
-            return Result.failure(Exception("API key is not set"))
-        }
-        
-        val chatMessages = messages.map {
-            ChatMessage(
-                role = it.role.name.lowercase(),
-                content = it.content
-            )
-        }
-        
-        val request = ChatRequest.fromModelConfig(chatMessages, modelConfig)
-        
-        val response = client.post("$baseUrl/chat/completions") {
-            contentType(ContentType.Application.Json)
-            header("Authorization", "Bearer $apiKey")
-            setBody(request)
-        }
-        
-        if (response.status.isSuccess()) {
-            val chatResponse: ChatResponse = response.body()
-            val assistantMessage = chatResponse.choices.firstOrNull()?.message
-            
-            if (assistantMessage != null) {
-                val message = Message(
-                    id = UUID.randomUUID().toString(),
-                    content = assistantMessage.content,
-                    role = Role.ASSISTANT
-                )
-                Result.success(message)
-            } else {
-                Result.failure(Exception("No response from assistant"))
+    ): Result<Message> {
+        return try {
+            val apiKey = preferencesRepository.getApiKey()
+            val baseUrl = preferencesRepository.getApiBaseUrl()
+
+            if (apiKey.isBlank()) {
+                return Result.failure(Exception("API key is not set"))
             }
-        } else {
-            Result.failure(Exception("API request failed with status: ${response.status}"))
+
+            val chatMessages = messages.map {
+                ChatMessage(
+                    role = it.role.name.lowercase(),
+                    content = it.content
+                )
+            }
+
+            val request = ChatRequest.fromModelConfig(chatMessages, modelConfig)
+
+            val response = client.post("$baseUrl/chat/completions") {
+                contentType(ContentType.Application.Json)
+                header("Authorization", "Bearer $apiKey")
+                setBody(request)
+            }
+
+            if (response.status.isSuccess()) {
+                val chatResponse: ChatResponse = response.body()
+                val assistantMessage = chatResponse.choices.firstOrNull()?.message
+
+                if (assistantMessage != null) {
+                    val message = Message(
+                        id = UUID.randomUUID().toString(),
+                        content = assistantMessage.content,
+                        role = Role.ASSISTANT
+                    )
+                    Result.success(message)
+                } else {
+                    Result.failure(Exception("No response from assistant"))
+                }
+            } else {
+                Result.failure(Exception("API request failed with status: ${response.status}"))
+            }
+        } catch (e: Exception) {
+            Result.failure(e)
         }
-    } catch (e: Exception) {
-        Result.failure(e)
     }
     
     override fun cancelRequest() {
@@ -136,20 +138,22 @@ class OpenAIChatService(
         currentJob = null
     }
     
-    override suspend fun isApiAvailable(): Boolean = try {
-        val apiKey = preferencesRepository.getApiKey()
-        val baseUrl = preferencesRepository.getApiBaseUrl()
-        
-        if (apiKey.isBlank()) {
-            return false
+    override suspend fun isApiAvailable(): Boolean {
+        return try {
+            val apiKey = preferencesRepository.getApiKey()
+            val baseUrl = preferencesRepository.getApiBaseUrl()
+
+            if (apiKey.isBlank()) {
+                return false
+            }
+
+            val response = client.get("$baseUrl/models") {
+                header("Authorization", "Bearer $apiKey")
+            }
+
+            response.status.isSuccess()
+        } catch (e: Exception) {
+            false
         }
-        
-        val response = client.get("$baseUrl/models") {
-            header("Authorization", "Bearer $apiKey")
-        }
-        
-        response.status.isSuccess()
-    } catch (e: Exception) {
-        false
     }
 }
