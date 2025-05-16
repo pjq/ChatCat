@@ -43,7 +43,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import me.pjq.chatcat.di.AppModule
 import me.pjq.chatcat.i18n.StringResources
-import androidx.activity.compose.BackHandler
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -63,6 +62,7 @@ import me.pjq.chatcat.ui.components.ChatInput
 import me.pjq.chatcat.ui.components.ConversationListItem
 import me.pjq.chatcat.ui.components.MessageBubble
 import me.pjq.chatcat.viewmodel.ChatViewModel
+import moe.tlaster.precompose.navigation.BackHandler
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
 

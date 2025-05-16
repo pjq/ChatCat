@@ -61,11 +61,7 @@ kotlin {
         // val iosMain by getting
         
         commonMain.dependencies {
-    implementation("androidx.compose.ui:ui:1.0.0")
-    implementation("androidx.compose.material:material:1.0.0")
-    implementation("androidx.compose.ui:ui-tooling:1.0.0")
-    implementation("androidx.compose.foundation:foundation:1.0.0")
-    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
+            // Compose dependencies with consistent versioning
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)
@@ -75,9 +71,10 @@ kotlin {
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtimeCompose)
             
-            // Internationalization
-//            implementation("dev.icerock.moko:resources:0.23.0")
-//            implementation("dev.icerock.moko:resources-compose:0.23.0")
+            // Material components with consistent versioning
+            implementation(compose.material)
+            implementation(compose.materialIconsExtended)
+            
             
             // Networking
             implementation("io.ktor:ktor-client-core:3.1.3")
@@ -202,8 +199,3 @@ compose.desktop {
         }
     }
 }
-
-//multiplatformResources {
-//    multiplatformResourcesPackage = "me.pjq.chatcat.resources"
-//    disableStaticFrameworkWarning = true
-//}
