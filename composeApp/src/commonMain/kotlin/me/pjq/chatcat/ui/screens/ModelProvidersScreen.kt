@@ -24,6 +24,8 @@ import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.OutlinedTextField
+import me.pjq.chatcat.di.AppModule
+import me.pjq.chatcat.i18n.StringResources
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -56,13 +58,16 @@ fun ModelProvidersScreen(
     val providers = uiState.preferences.modelProviders
     val activeProviderId = uiState.preferences.activeProviderId
     
+    // Get the language manager
+    val languageManager = AppModule.languageManager
+    
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Model Providers") },
+                title = { Text(languageManager.getString(StringResources.SETTINGS_MODEL_SECTION)) },
                 navigationIcon = {
                     Text(
-                        text = "←",
+                        text = languageManager.getString(StringResources.BACK),
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.padding(8.dp)
                             .clickable { onNavigateBack() }
@@ -116,7 +121,8 @@ fun ModelProvidersScreen(
                     onEdit = { viewModel.startEditingProvider(activeProvider) },
                     onDelete = { viewModel.deleteProvider(activeProvider.id) },
                     onNavigateToSettings = { onNavigateToProviderSettings(activeProvider.id) },
-                    viewModel = viewModel
+                    viewModel = viewModel,
+                    languageManager = languageManager
                 )
             }
             
@@ -156,7 +162,8 @@ fun ModelProvidersScreen(
                         onEdit = { viewModel.startEditingProvider(provider) },
                         onDelete = { viewModel.deleteProvider(provider.id) },
                         onNavigateToSettings = { onNavigateToProviderSettings(provider.id) },
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        languageManager = languageManager
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -191,7 +198,8 @@ fun ModelProvidersScreen(
                         onEdit = { viewModel.startEditingProvider(provider) },
                         onDelete = { viewModel.deleteProvider(provider.id) },
                         onNavigateToSettings = { onNavigateToProviderSettings(provider.id) },
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        languageManager = languageManager
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -224,7 +232,8 @@ fun ModelProvidersScreen(
                         onEdit = { viewModel.startEditingProvider(provider) },
                         onDelete = { viewModel.deleteProvider(provider.id) },
                         onNavigateToSettings = { onNavigateToProviderSettings(provider.id) },
-                        viewModel = viewModel
+                        viewModel = viewModel,
+                        languageManager = languageManager
                     )
                     
                     Spacer(modifier = Modifier.height(16.dp))
@@ -254,7 +263,8 @@ fun ProviderCard(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onNavigateToSettings: () -> Unit,
-    viewModel: SettingsViewModel
+    viewModel: SettingsViewModel,
+    languageManager: me.pjq.chatcat.i18n.LanguageManager
 ) {
     
     Card(
@@ -286,7 +296,7 @@ fun ProviderCard(
                         modifier = Modifier.padding(8.dp)
                     ) {
                         Text(
-                            text = "Active",
+                            text = languageManager.getString(StringResources.SETTINGS_MODEL_SECTION),
                             style = MaterialTheme.typography.labelMedium,
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
@@ -388,7 +398,7 @@ fun ProviderCard(
                 },
                 modifier = Modifier.align(Alignment.End)
             ) {
-                Text("Save API Settings")
+                Text(languageManager.getString(StringResources.SAVE))
             }
             
             // Model Settings section for active provider (now below API Settings)

@@ -29,6 +29,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
+import me.pjq.chatcat.di.AppModule
+import me.pjq.chatcat.i18n.StringResources
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -61,6 +63,21 @@ fun ChatScreen(
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
+    // State for copy confirmation toast
+    var showCopyConfirmation by remember { mutableStateOf(false) }
+    var copyConfirmationMessage by remember { mutableStateOf("") }
+    
+    // Auto-hide toast after delay
+    if (showCopyConfirmation) {
+        LaunchedEffect(showCopyConfirmation) {
+            kotlinx.coroutines.delay(2000)
+            showCopyConfirmation = false
+        }
+    }
+    
+    // Get the language manager
+    val languageManager = AppModule.languageManager
+    
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
@@ -86,44 +103,10 @@ fun ChatScreen(
                             Spacer(modifier = Modifier.width(8.dp))
                             
                             Text(
-                                text = "ChatCat",
+                                text = languageManager.getString(StringResources.APP_NAME),
                                 style = MaterialTheme.typography.headlineSmall,
                                 color = MaterialTheme.colorScheme.onPrimaryContainer
                             )
-                        }
-                    }
-                    
-                    // New chat button
-                    Box(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(16.dp)
-                    ) {
-                        FloatingActionButton(
-                            onClick = { 
-                                viewModel.createNewConversation()
-                                scope.launch {
-                                    drawerState.close()
-                                }
-                            },
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically,
-                                modifier = Modifier.padding(horizontal = 16.dp)
-                            ) {
-                                Text(
-                                    text = "➕",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                                
-                                Spacer(modifier = Modifier.width(8.dp))
-                                
-                                Text(
-                                    text = "New Chat",
-                                    style = MaterialTheme.typography.titleMedium
-                                )
-                            }
                         }
                     }
                     
@@ -173,7 +156,7 @@ fun ChatScreen(
                             Spacer(modifier = Modifier.width(16.dp))
                             
                             Text(
-                                text = "Settings",
+                                text = languageManager.getString(StringResources.NAV_SETTINGS),
                                 style = MaterialTheme.typography.titleMedium
                             )
                         }
@@ -183,11 +166,13 @@ fun ChatScreen(
         },
         modifier = modifier
     ) {
+        // Use a different Scaffold configuration to ensure the title bar stays visible
         Scaffold(
             topBar = {
+                // Make the TopAppBar fixed and not scrollable
                 TopAppBar(
                     title = { 
-                        Text(uiState.currentConversation?.title ?: "New Chat") 
+                        Text(uiState.currentConversation?.title ?: languageManager.getString(StringResources.NAV_CHAT)) 
                     },
                     navigationIcon = {
                         IconButton(
@@ -202,8 +187,29 @@ fun ChatScreen(
                                 style = MaterialTheme.typography.headlineSmall
                             )
                         }
+                    },
+                    // Add "New Chat" button to the right side of the title bar
+                    actions = {
+                        IconButton(
+                            onClick = { 
+                                viewModel.createNewConversation()
+                            }
+                        ) {
+                            Text(
+                                text = "➕",
+                                style = MaterialTheme.typography.titleMedium
+                            )
+                        }
                     }
                 )
+            },
+            // Add a snackbar host for copy confirmation
+            snackbarHost = {
+                if (showCopyConfirmation) {
+                    Snackbar {
+                        Text(copyConfirmationMessage)
+                    }
+                }
             }
         ) { paddingValues ->
             Column(
@@ -215,80 +221,54 @@ fun ChatScreen(
                 val messages = uiState.currentConversation?.messages ?: emptyList()
                 val listState = rememberLazyListState()
                 
-                // Enhanced auto-scroll to handle both new messages and streaming updates
-                LaunchedEffect(messages.size, uiState.isStreaming) {
-                    if (messages.isNotEmpty()) {
-                        // Auto-scroll when either:
-                        // 1. A new message is added (size changes)
-                        // 2. Currently streaming (content is being updated in the last message)
-                        listState.animateScrollToItem(messages.size - 1)
-                    }
-                }
+                // Auto-scroll has been removed to allow manual scrolling
                 
-                // Also auto-scroll when streaming stops (to ensure we catch the final content)
-                LaunchedEffect(uiState.isLoading) {
-                    if (!uiState.isLoading && messages.isNotEmpty()) {
-                        listState.animateScrollToItem(messages.size - 1)
-                    }
-                }
-                
-                // We'll use a simpler approach for showing copy confirmation
-                var showCopyConfirmation by remember { mutableStateOf(false) }
-                var copyConfirmationMessage by remember { mutableStateOf("") }
-                
-                // Show copy confirmation if needed
-                if (showCopyConfirmation) {
-                    Box(
-                        modifier = Modifier.fillMaxWidth().padding(16.dp),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Snackbar {
-                            Text(copyConfirmationMessage)
-                        }
-                    }
-                    
-                    // Auto-hide after a delay
-                    LaunchedEffect(showCopyConfirmation) {
-                        kotlinx.coroutines.delay(2000)
-                        showCopyConfirmation = false
-                    }
-                }
-                
-                LazyColumn(
-                    state = listState,
+                // Use a Box with a small fixed height to contain the LazyColumn
+                // This prevents the keyboard from pushing the title bar off-screen
+                Box(
                     modifier = Modifier
-                        .weight(1f)
+                        .weight(0.3f) // Use even smaller weight to prevent expanding too much
                         .fillMaxWidth()
+                        .height(200.dp) // Use a smaller fixed height
                 ) {
-                    items(messages) { message ->
-                        MessageBubble(
-                            message = message,
-                            onCopyMessage = { content ->
-                                // Use the ClipboardUtil to copy text to clipboard
-                                ClipboardUtil.copyToClipboard(content)
-                                showCopyConfirmation = true
-                                copyConfirmationMessage = "Message copied to clipboard"
-                            },
-                            onResendMessage = { msg ->
-                                viewModel.resendMessage(msg)
-                            }
-                        )
-                    }
-                    
-                    // Show loading or streaming indicator if waiting for response
-                    if (uiState.isLoading) {
-                        item {
-                            Box(
-                                modifier = Modifier
-                                    .fillMaxWidth()
-                                    .padding(16.dp),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text(
-                                    text = if (uiState.isStreaming) "✏️ Writing..." else "⏳ Thinking...",
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                                )
+                    LazyColumn(
+                        state = listState,
+                        modifier = Modifier.fillMaxSize() // Fill the entire Box with a single modifier
+                    ) {
+                        items(messages) { message ->
+                            MessageBubble(
+                                message = message,
+                                onCopyMessage = { content ->
+                                    // Use the ClipboardUtil to copy text to clipboard
+                                    ClipboardUtil.copyToClipboard(content)
+                                    showCopyConfirmation = true
+                                    copyConfirmationMessage = languageManager.getString(StringResources.COPY) + " - " + 
+                                                             languageManager.getString(StringResources.DONE)
+                                },
+                                onResendMessage = { msg ->
+                                    viewModel.resendMessage(msg)
+                                },
+                                onDeleteMessage = { messageId ->
+                                    viewModel.deleteMessage(messageId)
+                                }
+                            )
+                        }
+                        
+                        // Show loading or streaming indicator if waiting for response
+                        if (uiState.isLoading) {
+                            item {
+                                Box(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(16.dp),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text(
+                                        text = if (uiState.isStreaming) "✏️ Writing..." else "⏳ Thinking...",
+                                        style = MaterialTheme.typography.bodyMedium,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                                    )
+                                }
                             }
                         }
                     }

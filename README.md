@@ -15,6 +15,7 @@ ChatCat is a modern AI chat assistant built with Kotlin Multiplatform(Compose UI
 - **Multiple Model Providers** - Support for OpenAI, Azure OpenAI, Anthropic, and other compatible APIs
 - **Configurable API Settings** - Easily set up API keys, base URLs, and connection parameters for each provider
 - **Preference Management** - Store and manage user settings across sessions and platforms
+- **Internationalization (i18n)** - Support for multiple languages with easy language switching
 
 ## Project Structure
 
@@ -49,6 +50,7 @@ ChatCat supports various configuration options:
 - **API Configuration**: Set your OpenAI API key and other connection parameters
 - **Chat Settings**: Customize temperature, max tokens, and other model parameters
 - **UI Preferences**: Set theme, font size, and other display options
+- **Language Settings**: Choose your preferred language from multiple supported options
 - **Storage Settings**: Configure where and how conversations are saved
 
 These settings can be accessed through the settings screen in the app interface.
@@ -66,6 +68,7 @@ ChatCat is built using:
 - **Kotlinx Coroutines** - Asynchronous programming
 - **Kotlinx Datetime** - Date and time handling
 - **Multiplatform Markdown Renderer** - Markdown rendering
+- **MOKO Resources** - Cross-platform internationalization (i18n) support
 
 ## Building for Different Platforms
 
@@ -89,6 +92,58 @@ This will create platform-specific installers (DMG for macOS, MSI for Windows, D
 ```
 This will generate web assets in the `build/dist/wasmJs/productionExecutable` directory.
 
+## Internationalization (i18n)
+
+ChatCat supports multiple languages through its internationalization system, allowing users to interact with the app in their preferred language.
+
+### Supported Languages
+
+- English (Default)
+- Chinese (简体中文)
+- Spanish (Español)
+- Japanese (日本語)
+- German (Deutsch)
+- French (Français)
+
+### Language Settings
+
+You can change the app language in the Settings screen:
+
+1. Navigate to the Settings screen
+2. Scroll to the "Appearance" section
+3. Select your preferred language from the dropdown menu
+4. The app will immediately update to display text in the selected language
+
+### Adding New Translations
+
+Developers can add support for additional languages:
+
+1. Create a new language resource file in the appropriate directory:
+   ```
+   /composeApp/src/commonMain/resources/MR/{language_code}/strings.xml
+   ```
+2. Translate all string resources from the base (English) file
+3. Register the new language in the `LanguageManager.kt` file
+
+### Technical Implementation
+
+ChatCat uses MOKO Resources for cross-platform string management:
+
+- String resources are defined once in XML format
+- Resources are accessed through generated code
+- Platform-specific implementations handle locale changes
+- User language preference is stored in `UserPreferences`
+
+For developers working with i18n:
+
+```kotlin
+// Example of accessing localized strings
+Text(
+    text = stringResource(MR.strings.settings_title),
+    style = MaterialTheme.typography.titleLarge
+)
+```
+
 ## Additional Resources
 
 Learn more about:
@@ -96,6 +151,7 @@ Learn more about:
 - [Compose Multiplatform](https://github.com/JetBrains/compose-multiplatform/#compose-multiplatform)
 - [Kotlin/Wasm](https://kotl.in/wasm/)
 - [OpenAI API](https://platform.openai.com/docs/api-reference)
+- [MOKO Resources](https://github.com/icerockdev/moko-resources) - Kotlin Multiplatform i18n library
 
 We would appreciate your feedback on Compose/Web and Kotlin/Wasm in the public Slack channel [#compose-web](https://slack-chats.kotlinlang.org/c/compose-web).
 If you face any issues, please report them on [YouTrack](https://youtrack.jetbrains.com/newIssue?project=CMP).

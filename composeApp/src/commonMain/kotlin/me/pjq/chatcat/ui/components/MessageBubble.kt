@@ -37,7 +37,8 @@ fun MessageBubble(
     message: Message,
     modifier: Modifier = Modifier,
     onCopyMessage: ((String) -> Unit)? = null,
-    onResendMessage: ((Message) -> Unit)? = null
+    onResendMessage: ((Message) -> Unit)? = null,
+    onDeleteMessage: ((String) -> Unit)? = null
 ) {
     val isUserMessage = message.role == Role.USER
     val alignment = if (isUserMessage) Alignment.End else Alignment.Start
@@ -97,8 +98,8 @@ fun MessageBubble(
                     AttachmentItem(attachment = attachment)
                 }
                 
-                // Action buttons (copy, resend)
-                if (onCopyMessage != null || onResendMessage != null) {
+                // Action buttons (copy, resend, delete)
+                if (onCopyMessage != null || onResendMessage != null || onDeleteMessage != null) {
                     Row(
                         modifier = Modifier.padding(top = 4.dp)
                     ) {
@@ -124,6 +125,20 @@ fun MessageBubble(
                             ) {
                                 Text(
                                     text = "↩️", // Resend icon
+                                    style = MaterialTheme.typography.bodySmall
+                                )
+                            }
+                        }
+                        
+                        // Delete message button
+                        if (onDeleteMessage != null) {
+                            Spacer(modifier = Modifier.width(8.dp))
+                            IconButton(
+                                onClick = { onDeleteMessage(message.id) },
+                                modifier = Modifier.size(24.dp)
+                            ) {
+                                Text(
+                                    text = "🗑️", // Delete icon
                                     style = MaterialTheme.typography.bodySmall
                                 )
                             }

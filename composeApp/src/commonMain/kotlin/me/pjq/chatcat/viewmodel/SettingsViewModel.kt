@@ -9,8 +9,10 @@ import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import me.pjq.chatcat.di.AppModule
+import me.pjq.chatcat.i18n.LanguageManager
 import me.pjq.chatcat.model.DefaultModelProviders
 import me.pjq.chatcat.model.FontSize
+import me.pjq.chatcat.model.Language
 import me.pjq.chatcat.model.ModelConfig
 import me.pjq.chatcat.model.ModelProvider
 import me.pjq.chatcat.model.ProviderType
@@ -153,6 +155,21 @@ class SettingsViewModel : ViewModel() {
             preferencesRepository.setMarkdownEnabled(enabled)
             val preferences = _uiState.value.preferences.copy(enableMarkdown = enabled)
             preferencesRepository.updateUserPreferences(preferences)
+        }
+    }
+    
+    fun updateLanguage(language: Language) {
+        viewModelScope.launch {
+            // Update the language in preferences
+            val preferences = _uiState.value.preferences.copy(language = language)
+            preferencesRepository.updateUserPreferences(preferences)
+            
+            // Update the language in the LanguageManager
+            val languageManager = LanguageManager.getInstance(preferencesRepository)
+            languageManager.setLanguage(language)
+            
+            // Log the language change
+            println("Language changed to: ${language.displayName} (${language.code})")
         }
     }
     

@@ -1,0 +1,86 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<resources>
+    <!-- App Name -->
+    <string name="app_name">ChatCat</string>
+    
+    <!-- Common UI Elements -->
+    <string name="ok">确定</string>
+    <string name="cancel">取消</string>
+    <string name="save">保存</string>
+    <string name="delete">删除</string>
+    <string name="edit">编辑</string>
+    <string name="back">返回</string>
+    <string name="next">下一步</string>
+    <string name="done">完成</string>
+    <string name="search">搜索</string>
+    <string name="send">发送</string>
+    <string name="copy">复制</string>
+    <string name="share">分享</string>
+    <string name="retry">重试</string>
+    
+    <!-- Navigation -->
+    <string name="nav_chat">聊天</string>
+    <string name="nav_history">历史</string>
+    <string name="nav_settings">设置</string>
+    <string name="nav_about">关于</string>
+    
+    <!-- Chat Screen -->
+    <string name="chat_placeholder">输入消息...</string>
+    <string name="chat_empty_state">开始与ChatCat对话吧！</string>
+    <string name="chat_thinking">思考中...</string>
+    <string name="chat_error">抱歉，发生错误。请重试。</string>
+    <string name="chat_copy_success">消息已复制到剪贴板</string>
+    <string name="chat_new">新对话</string>
+    <string name="chat_clear">清空对话</string>
+    <string name="chat_clear_confirm">确定要清空此对话吗？</string>
+    
+    <!-- Settings Screen -->
+    <string name="settings_title">设置</string>
+    <string name="settings_api_section">API配置</string>
+    <string name="settings_api_key">API密钥</string>
+    <string name="settings_api_url">API基础URL</string>
+    <string name="settings_api_connected">API已连接</string>
+    <string name="settings_api_disconnected">API未连接</string>
+    <string name="settings_model_section">模型配置</string>
+    <string name="settings_model_temperature">温度</string>
+    <string name="settings_model_max_tokens">最大令牌数</string>
+    <string name="settings_model_stream">流式模式</string>
+    <string name="settings_appearance_section">外观</string>
+    <string name="settings_theme">主题</string>
+    <string name="settings_theme_light">浅色</string>
+    <string name="settings_theme_dark">深色</string>
+    <string name="settings_theme_system">系统默认</string>
+    <string name="settings_font_size">字体大小</string>
+    <string name="settings_font_small">小</string>
+    <string name="settings_font_medium">中</string>
+    <string name="settings_font_large">大</string>
+    <string name="settings_font_xlarge">特大</string>
+    <string name="settings_language">语言</string>
+    <string name="settings_other_section">其他设置</string>
+    <string name="settings_sound_effects">音效</string>
+    <string name="settings_notifications">通知</string>
+    <string name="settings_auto_save">自动保存</string>
+    <string name="settings_auto_save_interval">自动保存间隔（分钟）</string>
+    <string name="settings_markdown">Markdown渲染</string>
+    <string name="settings_offline_mode">离线模式</string>
+    
+    <!-- Model Providers Screen -->
+    <string name="providers_title">模型提供商</string>
+    <string name="providers_active">当前提供商</string>
+    <string name="providers_manage">管理模型提供商</string>
+    <string name="providers_add">添加提供商</string>
+    <string name="providers_edit">编辑提供商</string>
+    <string name="providers_delete">删除提供商</string>
+    <string name="providers_delete_confirm">确定要删除此提供商吗？</string>
+    <string name="providers_name">提供商名称</string>
+    <string name="providers_type">提供商类型</string>
+    <string name="providers_api_key">API密钥</string>
+    <string name="providers_api_url">API URL</string>
+    <string name="providers_model">模型</string>
+    
+    <!-- Error Messages -->
+    <string name="error_api_key">请输入有效的API密钥</string>
+    <string name="error_api_url">请输入有效的API URL</string>
+    <string name="error_network">网络错误。请检查您的连接。</string>
+    <string name="error_unknown">发生未知错误</string>
+</resources>

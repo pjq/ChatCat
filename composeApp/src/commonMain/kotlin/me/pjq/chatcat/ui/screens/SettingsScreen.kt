@@ -36,7 +36,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import me.pjq.chatcat.di.AppModule
+import me.pjq.chatcat.i18n.LanguageManager
+import me.pjq.chatcat.i18n.StringResources
 import me.pjq.chatcat.model.FontSize
+import me.pjq.chatcat.model.Language
 import me.pjq.chatcat.model.ModelConfig
 import me.pjq.chatcat.model.ProviderType
 import me.pjq.chatcat.model.Theme
@@ -60,13 +64,16 @@ fun SettingsScreen(
         viewModel.loadAvailableModels()
     }
     
+    // Get the language manager
+    val languageManager = AppModule.languageManager
+    
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(languageManager.getString(StringResources.SETTINGS_TITLE)) },
                 navigationIcon = {
                     Text(
-                        text = "←",
+                        text = languageManager.getString(StringResources.BACK),
                         style = MaterialTheme.typography.headlineSmall,
                         modifier = Modifier.padding(8.dp)
                             .clickable { onNavigateBack() }
@@ -131,7 +138,7 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             // Model Configuration Settings
-            SettingsSection(title = "Model Configuration") {
+            SettingsSection(title = languageManager.getString(StringResources.SETTINGS_MODEL_SECTION)) {
                 val preferences = uiState.preferences
                 
                 // Use remember with key to update when preferences change
@@ -203,27 +210,27 @@ fun SettingsScreen(
             Spacer(modifier = Modifier.height(24.dp))
             
             // Appearance Settings
-            SettingsSection(title = "Appearance") {
+            SettingsSection(title = languageManager.getString(StringResources.SETTINGS_APPEARANCE_SECTION)) {
                 Text(
-                    text = "Theme",
+                    text = languageManager.getString(StringResources.SETTINGS_THEME),
                     style = MaterialTheme.typography.bodyLarge
                 )
                 
                 Column(Modifier.selectableGroup()) {
                     ThemeOption(
-                        title = "Light",
+                        title = languageManager.getString(StringResources.SETTINGS_THEME_LIGHT),
                         selected = preferences.theme == Theme.LIGHT,
                         onClick = { viewModel.updateTheme(Theme.LIGHT) }
                     )
                     
                     ThemeOption(
-                        title = "Dark",
+                        title = languageManager.getString(StringResources.SETTINGS_THEME_DARK),
                         selected = preferences.theme == Theme.DARK,
                         onClick = { viewModel.updateTheme(Theme.DARK) }
                     )
                     
                     ThemeOption(
-                        title = "System Default",
+                        title = languageManager.getString(StringResources.SETTINGS_THEME_SYSTEM),
                         selected = preferences.theme == Theme.SYSTEM,
                         onClick = { viewModel.updateTheme(Theme.SYSTEM) }
                     )
@@ -261,12 +268,25 @@ fun SettingsScreen(
                         onClick = { viewModel.updateFontSize(FontSize.EXTRA_LARGE) }
                     )
                 }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                Text(
+                    text = languageManager.getString(StringResources.SETTINGS_LANGUAGE),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                
+                // Language dropdown
+                LanguageSelector(
+                    selectedLanguage = preferences.language,
+                    onLanguageSelected = { viewModel.updateLanguage(it) }
+                )
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
             // Other Settings
-            SettingsSection(title = "Other Settings") {
+            SettingsSection(title = languageManager.getString(StringResources.SETTINGS_OTHER_SECTION)) {
                 SwitchSetting(
                     title = "Sound Effects",
                     checked = preferences.enableSoundEffects,
@@ -360,5 +380,62 @@ fun FontSizeOption(
             text = title,
             style = MaterialTheme.typography.bodyMedium
         )
+    }
+}
+
+@Composable
+fun LanguageSelector(
+    selectedLanguage: Language,
+    onLanguageSelected: (Language) -> Unit
+) {
+    // Use remember with selectedLanguage as key to update when language changes
+    var expanded by remember { mutableStateOf(false) }
+    // Remember the current selected language to display
+    var currentLanguage by remember(selectedLanguage) { mutableStateOf(selectedLanguage) }
+    
+    // Create a card with a clickable area to open the dropdown
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable { expanded = true }
+            .padding(vertical = 8.dp)
+    ) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp)
+        ) {
+            Text(
+                text = currentLanguage.displayName,
+                style = MaterialTheme.typography.bodyMedium,
+                modifier = Modifier.weight(1f)
+            )
+            
+            Text(
+                text = "▼",
+                style = MaterialTheme.typography.bodyMedium
+            )
+            
+            // Dropdown menu
+            DropdownMenu(
+                expanded = expanded,
+                onDismissRequest = { expanded = false }
+            ) {
+                // Add an item for each language
+                Language.values().forEach { language ->
+                    DropdownMenuItem(
+                        text = { 
+                            Text(language.displayName) 
+                        },
+                        onClick = {
+                            currentLanguage = language
+                            onLanguageSelected(language)
+                            expanded = false
+                        }
+                    )
+                }
+            }
+        }
     }
 }

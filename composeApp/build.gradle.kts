@@ -11,6 +11,7 @@ plugins {
     alias(libs.plugins.composeCompiler)
     alias(libs.plugins.composeHotReload)
     kotlin("plugin.serialization") version "2.1.21"
+//    id("dev.icerock.mobile.multiplatform-resources") version "0.23.0"
 }
 
 kotlin {
@@ -68,6 +69,10 @@ kotlin {
             implementation(compose.components.uiToolingPreview)
             implementation(libs.androidx.lifecycle.viewmodel)
             implementation(libs.androidx.lifecycle.runtimeCompose)
+            
+            // Internationalization
+//            implementation("dev.icerock.moko:resources:0.23.0")
+//            implementation("dev.icerock.moko:resources-compose:0.23.0")
             
             // Networking
             implementation("io.ktor:ktor-client-core:3.1.3")
@@ -192,3 +197,8 @@ compose.desktop {
         }
     }
 }
+
+//multiplatformResources {
+//    multiplatformResourcesPackage = "me.pjq.chatcat.resources"
+//    disableStaticFrameworkWarning = true
+//}

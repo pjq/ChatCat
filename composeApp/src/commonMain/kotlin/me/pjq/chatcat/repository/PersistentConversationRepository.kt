@@ -159,6 +159,27 @@ class PersistentConversationRepository(
         return null
     }
     
+    override suspend fun deleteMessage(conversationId: String, messageId: String): Conversation? {
+        val index = conversations.indexOfFirst { it.id == conversationId }
+        if (index != -1) {
+            val conversation = conversations[index]
+            val updatedMessages = conversation.messages.filter { it.id != messageId }
+            
+            // Only update if a message was actually removed
+            if (updatedMessages.size < conversation.messages.size) {
+                val updatedConversation = conversation.copy(
+                    messages = updatedMessages,
+                    updatedAt = Clock.System.now()
+                )
+                conversations[index] = updatedConversation
+                saveConversation(updatedConversation)
+                updateFlow()
+                return updatedConversation
+            }
+        }
+        return null
+    }
+    
     override suspend fun clearConversations(): Boolean {
         // Remove all conversation entries
         conversations.forEach { conversation ->

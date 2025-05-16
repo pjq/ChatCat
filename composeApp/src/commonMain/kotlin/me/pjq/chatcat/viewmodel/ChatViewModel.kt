@@ -103,6 +103,17 @@ class ChatViewModel : ViewModel() {
     }
     
     /**
+     * Deletes a message from the current conversation
+     */
+    fun deleteMessage(messageId: String) {
+        val conversationId = currentConversationId ?: return
+        
+        viewModelScope.launch {
+            conversationRepository.deleteMessage(conversationId, messageId)
+        }
+    }
+    
+    /**
      * Internal implementation of sending a message
      */
     private fun sendMessageInternal(content: String) {

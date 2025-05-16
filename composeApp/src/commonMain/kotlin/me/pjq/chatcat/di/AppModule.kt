@@ -1,6 +1,7 @@
 package me.pjq.chatcat.di
 
 import com.russhwolf.settings.ExperimentalSettingsApi
+import me.pjq.chatcat.i18n.LanguageManager
 import me.pjq.chatcat.repository.*
 import me.pjq.chatcat.service.ChatService
 import me.pjq.chatcat.service.OpenAIClientChatService
@@ -33,5 +34,10 @@ object AppModule {
     // Model service for listing available models
     val modelService by lazy {
         chatService as OpenAIClientChatService
+    }
+    
+    // Language manager for i18n
+    val languageManager by lazy {
+        LanguageManager.getInstance(preferencesRepository)
     }
 }

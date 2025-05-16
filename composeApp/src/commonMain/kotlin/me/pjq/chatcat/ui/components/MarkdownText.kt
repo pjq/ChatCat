@@ -24,7 +24,7 @@ fun MarkdownText(
     modifier: Modifier = Modifier,
     style: TextStyle = MaterialTheme.typography.bodyMedium,
     isError: Boolean = false,
-    useMarkdownRenderer: Boolean = false,
+    useMarkdownRenderer: Boolean = true,
     isStreaming: Boolean = false
 ) {
     // During streaming, use simple text to avoid repeated expensive parsing
