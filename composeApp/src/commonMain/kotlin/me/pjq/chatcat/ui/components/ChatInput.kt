@@ -5,6 +5,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
@@ -30,6 +31,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.TextStyle
+import androidx.compose.ui.unit.min
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.KeyboardType
@@ -58,22 +61,28 @@ fun ChatInput(
             defaultElevation = 0.dp
         )
     ) {
+        // Use a dynamic padding that can adjust based on content height
         Row(
-            verticalAlignment = Alignment.CenterVertically,
+            verticalAlignment = Alignment.Bottom, // Keep Bottom alignment for the overall row
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(horizontal = 8.dp, vertical = 4.dp)
         ) {
-            // Attachment button - more subtle
-            IconButton(
-                onClick = onAttachFile,
-                modifier = Modifier.size(40.dp)
+            // Attachment button - align center
+            Box(
+                contentAlignment = Alignment.Center,
+                modifier = Modifier.align(Alignment.CenterVertically) // This aligns the Box in the center
             ) {
-                Text(
-                    text = "📎",
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
+                IconButton(
+                    onClick = onAttachFile,
+                    modifier = Modifier.size(40.dp)
+                ) {
+                    Text(
+                        text = "📎",
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                }
             }
             
             // Text input field - modern style with no visible outline
@@ -89,11 +98,11 @@ fun ChatInput(
                 },
                 modifier = Modifier
                     .weight(1f)
-                    .height(56.dp),
+                    .heightIn(min = 56.dp, max = 120.dp),
                 keyboardOptions = KeyboardOptions(
                     capitalization = KeyboardCapitalization.Sentences,
                     keyboardType = KeyboardType.Text,
-                    imeAction = ImeAction.Send
+                    imeAction = ImeAction.Default // Changed to Default for multiline support
                 ),
                 keyboardActions = KeyboardActions(
                     onSend = {
@@ -105,6 +114,8 @@ fun ChatInput(
                 ),
                 singleLine = false,
                 maxLines = 5,
+                minLines = 1,
+                textStyle = MaterialTheme.typography.bodyMedium,
                 colors = TextFieldDefaults.colors(
                     focusedContainerColor = Color.Transparent,
                     unfocusedContainerColor = Color.Transparent,
@@ -115,7 +126,7 @@ fun ChatInput(
                 )
             )
             
-            // Modern send button
+            // Modern send button - keep aligned to bottom
             IconButton(
                 onClick = {
                     if (messageText.isNotBlank() && !isLoading) {
@@ -127,6 +138,7 @@ fun ChatInput(
                 modifier = Modifier
                     .size(40.dp)
                     .clip(CircleShape)
+                    .align(Alignment.Bottom) // Ensure it stays at the bottom with multiline text
             ) {
                 if (isLoading) {
                     Text(

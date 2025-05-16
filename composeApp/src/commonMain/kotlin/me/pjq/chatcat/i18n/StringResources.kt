@@ -40,6 +40,8 @@ object StringResources {
     const val COPY = "copy"
     const val SHARE = "share"
     const val RETRY = "retry"
+    const val WRITING = "writing"
+    const val THINKING = "thinking"
     
     // Navigation
     const val NAV_CHAT = "nav_chat"
@@ -74,6 +76,8 @@ object StringResources {
         COPY to "Copy",
         SHARE to "Share",
         RETRY to "Retry",
+        WRITING to "Writing...",
+        THINKING to "Thinking...",
         NAV_CHAT to "Chat",
         NAV_HISTORY to "History",
         NAV_SETTINGS to "Settings",
@@ -105,6 +109,8 @@ object StringResources {
         COPY to "复制",
         SHARE to "分享",
         RETRY to "重试",
+        WRITING to "正在写作...",
+        THINKING to "正在思考...",
         NAV_CHAT to "聊天",
         NAV_HISTORY to "历史",
         NAV_SETTINGS to "设置",

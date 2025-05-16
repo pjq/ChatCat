@@ -33,21 +33,21 @@ class ChatViewModel : ViewModel() {
         loadConversations()
     }
     
-    private fun loadConversations() {
-        viewModelScope.launch {
-            conversationRepository.getConversations().collectLatest { conversations ->
-                _uiState.update { it.copy(conversations = conversations) }
-                
-                // Update current conversation if it's in the list
-                currentConversationId?.let { id ->
-                    val currentConversation = conversations.find { it.id == id }
-                    if (currentConversation != null) {
-                        _uiState.update { it.copy(currentConversation = currentConversation) }
-                    }
+private fun loadConversations() {
+    viewModelScope.launch {
+        conversationRepository.getConversations().collectLatest { conversations ->
+            _uiState.update { it.copy(conversations = conversations) }
+            
+            // Update current conversation if it's in the list
+            currentConversationId?.let { id ->
+                val currentConversation = conversations.find { it.id == id }
+                if (currentConversation != null) {
+                    _uiState.update { it.copy(currentConversation = currentConversation) }
                 }
             }
         }
     }
+}
     
     fun selectConversation(conversationId: String) {
         viewModelScope.launch {
@@ -59,13 +59,13 @@ class ChatViewModel : ViewModel() {
         }
     }
     
-    fun createNewConversation() {
-        viewModelScope.launch {
-            val conversation = conversationRepository.createConversation("New Chat")
-            currentConversationId = conversation.id
-            _uiState.update { it.copy(currentConversation = conversation) }
-        }
+fun createNewConversation() {
+    viewModelScope.launch {
+        val conversation = conversationRepository.createConversation(generateTitleFromContent("New Chat"))
+        currentConversationId = conversation.id
+        _uiState.update { it.copy(currentConversation = conversation) }
     }
+}
     
     fun deleteConversation(conversationId: String) {
         viewModelScope.launch {

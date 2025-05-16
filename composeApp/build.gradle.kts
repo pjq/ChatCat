@@ -61,6 +61,11 @@ kotlin {
         // val iosMain by getting
         
         commonMain.dependencies {
+    implementation("androidx.compose.ui:ui:1.0.0")
+    implementation("androidx.compose.material:material:1.0.0")
+    implementation("androidx.compose.ui:ui-tooling:1.0.0")
+    implementation("androidx.compose.foundation:foundation:1.0.0")
+    implementation("org.jetbrains.kotlinx:kotlinx-datetime:0.5.0")
             implementation(compose.runtime)
             implementation(compose.foundation)
             implementation(compose.material3)

@@ -38,7 +38,8 @@ fun MessageBubble(
     modifier: Modifier = Modifier,
     onCopyMessage: ((String) -> Unit)? = null,
     onResendMessage: ((Message) -> Unit)? = null,
-    onDeleteMessage: ((String) -> Unit)? = null
+    onDeleteMessage: ((String) -> Unit)? = null,
+    isStreaming: Boolean = false
 ) {
     val isUserMessage = message.role == Role.USER
     val alignment = if (isUserMessage) Alignment.End else Alignment.Start
@@ -89,7 +90,8 @@ fun MessageBubble(
                     MarkdownText(
                         markdown = message.content,
                         style = MaterialTheme.typography.bodyMedium,
-                        isError = message.isError
+                        isError = message.isError,
+                        isStreaming = isStreaming && message.role == Role.ASSISTANT
                     )
                 }
                 
