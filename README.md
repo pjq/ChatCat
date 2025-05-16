@@ -12,7 +12,8 @@ ChatCat is a modern AI chat assistant built with Kotlin Multiplatform(Compose UI
 - **Copy & Resend** - Easily copy message content to clipboard or resend previous messages
 - **Customizable Responses** - Adjust the AI's personality and response style
 - **Dark/Light Mode** - Choose your preferred visual theme
-- **Configurable API Settings** - Easily set up API keys, base URLs, and connection parameters
+- **Multiple Model Providers** - Support for OpenAI, Azure OpenAI, Anthropic, and other compatible APIs
+- **Configurable API Settings** - Easily set up API keys, base URLs, and connection parameters for each provider
 - **Preference Management** - Store and manage user settings across sessions and platforms
 
 ## Project Structure

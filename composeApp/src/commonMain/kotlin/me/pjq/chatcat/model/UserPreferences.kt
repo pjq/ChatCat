@@ -14,7 +14,9 @@ data class UserPreferences(
     val enableSoundEffects: Boolean = true,
     val enableAutoSave: Boolean = true,
     val autoSaveInterval: Int = 5, // in minutes
-    val enableMarkdown: Boolean = true // Enable Markdown rendering by default
+    val enableMarkdown: Boolean = true, // Enable Markdown rendering by default
+    val modelProviders: List<ModelProvider> = DefaultModelProviders.getDefaultProviders(),
+    val activeProviderId: String = DefaultModelProviders.OPENAI.id
 )
 
 @Serializable

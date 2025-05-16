@@ -6,8 +6,10 @@ import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import me.pjq.chatcat.model.DefaultModelProviders
 import me.pjq.chatcat.model.FontSize
 import me.pjq.chatcat.model.ModelConfig
+import me.pjq.chatcat.model.ModelProvider
 import me.pjq.chatcat.model.Theme
 import me.pjq.chatcat.model.UserPreferences
 
@@ -32,10 +34,15 @@ class PersistentPreferencesRepository(
         const val DEFAULT_MODEL_CONFIG = "default_model_config"
         const val SOUND_EFFECTS_ENABLED = "sound_effects_enabled"
         const val MARKDOWN_ENABLED = "markdown_enabled"
+        const val MODEL_PROVIDERS = "model_providers"
+        const val ACTIVE_PROVIDER_ID = "active_provider_id"
     }
     
     override suspend fun getUserPreferences(): Flow<UserPreferences> {
         return settings.getStringOrNullFlow(PreferenceKeys.API_KEY).map { _ ->
+            val modelProviders = getModelProviders()
+            val activeProviderId = getActiveProviderId()
+            
             UserPreferences(
                 apiKey = getApiKey(),
                 apiBaseUrl = getApiBaseUrl(),
@@ -43,7 +50,9 @@ class PersistentPreferencesRepository(
                 fontSize = getFontSize(),
                 defaultModelConfig = getDefaultModelConfig(),
                 enableSoundEffects = getSoundEffectsEnabled(),
-                enableMarkdown = getMarkdownEnabled()
+                enableMarkdown = getMarkdownEnabled(),
+                modelProviders = modelProviders,
+                activeProviderId = activeProviderId
             )
         }
     }
@@ -56,6 +65,41 @@ class PersistentPreferencesRepository(
         setDefaultModelConfig(preferences.defaultModelConfig)
         setSoundEffectsEnabled(preferences.enableSoundEffects)
         setMarkdownEnabled(preferences.enableMarkdown)
+        setModelProviders(preferences.modelProviders)
+        setActiveProviderId(preferences.activeProviderId)
+    }
+    
+    private suspend fun getModelProviders(): List<ModelProvider> {
+        val providersJson = settings.getStringOrNull(PreferenceKeys.MODEL_PROVIDERS)
+        return if (providersJson != null) {
+            try {
+                json.decodeFromString<List<ModelProvider>>(providersJson)
+            } catch (e: Exception) {
+                println("Error decoding ModelProviders: ${e.message}")
+                DefaultModelProviders.getDefaultProviders()
+            }
+        } else {
+            DefaultModelProviders.getDefaultProviders()
+        }
+    }
+    
+    private suspend fun setModelProviders(providers: List<ModelProvider>) {
+        try {
+            val providersJson = json.encodeToString(providers)
+            settings.putString(PreferenceKeys.MODEL_PROVIDERS, providersJson)
+            println("Saved ModelProviders: $providersJson")
+        } catch (e: Exception) {
+            println("Error encoding ModelProviders: ${e.message}")
+        }
+    }
+    
+    override suspend fun getActiveProviderId(): String {
+        return settings.getStringOrNull(PreferenceKeys.ACTIVE_PROVIDER_ID) ?: DefaultModelProviders.OPENAI.id
+    }
+    
+    override suspend fun setActiveProviderId(providerId: String) {
+        settings.putString(PreferenceKeys.ACTIVE_PROVIDER_ID, providerId)
+        println("Active provider ID saved: $providerId")
     }
     
     override suspend fun getApiKey(): String {

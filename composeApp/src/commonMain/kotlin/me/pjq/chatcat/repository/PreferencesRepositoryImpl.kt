@@ -75,4 +75,13 @@ class PreferencesRepositoryImpl : PreferencesRepository {
     override suspend fun setMarkdownEnabled(enabled: Boolean) {
         preferences = preferences.copy(enableMarkdown = enabled)
     }
+    
+    override suspend fun getActiveProviderId(): String {
+        return preferences.activeProviderId
+    }
+    
+    override suspend fun setActiveProviderId(providerId: String) {
+        preferences = preferences.copy(activeProviderId = providerId)
+        println("In-memory active provider ID updated: $providerId")
+    }
 }

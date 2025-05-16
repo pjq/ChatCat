@@ -3,6 +3,7 @@ package me.pjq.chatcat.ui.navigation
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import me.pjq.chatcat.ui.screens.ChatScreen
+import me.pjq.chatcat.ui.screens.ModelProvidersScreen
 import me.pjq.chatcat.ui.screens.SettingsScreen
 import me.pjq.chatcat.ui.theme.ChatCatTheme
 import me.pjq.chatcat.viewmodel.ChatViewModel
@@ -44,6 +45,25 @@ fun AppNavigation() {
                         viewModel = settingsViewModel,
                         onNavigateBack = {
                             navigator.goBack()
+                        },
+                        onNavigateToModelProviders = {
+                            navigator.navigate(Route.MODEL_PROVIDERS)
+                        }
+                    )
+                }
+            )
+            
+            scene(
+                route = Route.MODEL_PROVIDERS,
+                content = {
+                    ModelProvidersScreen(
+                        viewModel = settingsViewModel,
+                        onNavigateBack = {
+                            navigator.goBack()
+                        },
+                        onNavigateToProviderSettings = { providerId ->
+                            // Navigate back to settings with provider ID
+                            navigator.goBack()
                         }
                     )
                 }
@@ -55,4 +75,5 @@ fun AppNavigation() {
 object Route {
     const val CHAT = "chat"
     const val SETTINGS = "settings"
+    const val MODEL_PROVIDERS = "model_providers"
 }

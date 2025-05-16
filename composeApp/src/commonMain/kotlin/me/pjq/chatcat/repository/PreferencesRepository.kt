@@ -30,4 +30,7 @@ interface PreferencesRepository {
     
     suspend fun getMarkdownEnabled(): Boolean
     suspend fun setMarkdownEnabled(enabled: Boolean)
+    
+    suspend fun getActiveProviderId(): String
+    suspend fun setActiveProviderId(providerId: String)
 }

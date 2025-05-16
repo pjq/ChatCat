@@ -9,8 +9,6 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.selection.selectableGroup
@@ -40,7 +38,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import me.pjq.chatcat.model.FontSize
 import me.pjq.chatcat.model.ModelConfig
+import me.pjq.chatcat.model.ProviderType
 import me.pjq.chatcat.model.Theme
+import me.pjq.chatcat.ui.components.getProviderTypeDescription
+import me.pjq.chatcat.ui.components.SwitchSetting
 import me.pjq.chatcat.viewmodel.SettingsViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -48,6 +49,7 @@ import me.pjq.chatcat.viewmodel.SettingsViewModel
 fun SettingsScreen(
     viewModel: SettingsViewModel,
     onNavigateBack: () -> Unit,
+    onNavigateToModelProviders: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
@@ -90,58 +92,48 @@ fun SettingsScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // API Settings
-            SettingsSection(title = "API Settings") {
-                // Use remember with key to update when preferences change
-                var apiKeyText by remember(preferences.apiKey) { mutableStateOf(preferences.apiKey) }
-                OutlinedTextField(
-                    value = apiKeyText,
-                    onValueChange = { 
-                        apiKeyText = it
-                        viewModel.updateApiKey(it) 
-                    },
-                    label = { Text("API Key") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = true
-                )
+            // Model Providers Settings
+            SettingsSection(title = "Model Providers") {
+                val activeProvider = uiState.activeProvider
                 
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Use remember with key to update when preferences change
-                var apiBaseUrlText by remember(preferences.apiBaseUrl) { mutableStateOf(preferences.apiBaseUrl) }
-                OutlinedTextField(
-                    value = apiBaseUrlText,
-                    onValueChange = { 
-                        apiBaseUrlText = it
-                        viewModel.updateApiBaseUrl(it) 
-                    },
-                    label = { Text("API Base URL") },
-                    modifier = Modifier.fillMaxWidth(),
-                    singleLine = true,
-                    enabled = true
-                )
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                // Save button for API settings
-                androidx.compose.material3.Button(
-                    onClick = {
-                        // Explicitly save the settings
-                        viewModel.updateApiKey(apiKeyText)
-                        viewModel.updateApiBaseUrl(apiBaseUrlText)
-                        viewModel.checkApiAvailability()
-                    },
-                    modifier = Modifier.align(Alignment.End)
+                // Show active provider info
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 8.dp)
                 ) {
-                    Text("Save API Settings")
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "Active Provider: ${activeProvider.name}",
+                            style = MaterialTheme.typography.bodyLarge
+                        )
+                        
+                        Text(
+                            text = getProviderTypeDescription(activeProvider.providerType),
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Button to navigate to Model Providers screen
+                androidx.compose.material3.Button(
+                    onClick = onNavigateToModelProviders,
+                    modifier = Modifier.fillMaxWidth()
+                ) {
+                    Text("Manage Model Providers")
                 }
             }
             
             Spacer(modifier = Modifier.height(24.dp))
             
-            // Model Settings - MOVED HERE FROM BELOW
-            SettingsSection(title = "Model Settings") {
+            // Model Configuration Settings
+            SettingsSection(title = "Model Configuration") {
+                val preferences = uiState.preferences
+                
                 // Use remember with key to update when preferences change
                 var temperature by remember(preferences.defaultModelConfig.temperature) { 
                     mutableStateOf(preferences.defaultModelConfig.temperature) 
@@ -150,94 +142,8 @@ fun SettingsScreen(
                 var maxTokens by remember(preferences.defaultModelConfig.maxTokens) { 
                     mutableStateOf(preferences.defaultModelConfig.maxTokens.toFloat()) 
                 }
-                // Use remember with key to update when model changes
-                var expanded by remember(preferences.defaultModelConfig.model) { mutableStateOf(false) }
                 
-                // Model dropdown
-                Column {
-                    Text(
-                        text = "Model",
-                        style = MaterialTheme.typography.bodyLarge
-                    )
-                    
-                    Spacer(modifier = Modifier.height(4.dp))
-                    
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        // Make the text field clickable to open the dropdown
-                        OutlinedTextField(
-                            value = preferences.defaultModelConfig.model,
-                            onValueChange = { },
-                            label = { Text("Selected Model") },
-                            modifier = Modifier
-                                .weight(1f)
-                                .clickable(enabled = uiState.availableModels.isNotEmpty()) { 
-                                    expanded = true 
-                                },
-                            singleLine = true,
-                            enabled = false,
-                            readOnly = true,
-                            trailingIcon = {
-                                if (uiState.availableModels.isNotEmpty()) {
-                                    Text(
-                                        text = "▼",
-                                        modifier = Modifier.clickable { expanded = true }
-                                    )
-                                }
-                            }
-                        )
-                        
-                        Spacer(modifier = Modifier.width(8.dp))
-                        
-                        androidx.compose.material3.Button(
-                            onClick = { expanded = true },
-                            enabled = uiState.availableModels.isNotEmpty()
-                        ) {
-                            Text("Select")
-                        }
-                        
-                        DropdownMenu(
-                            expanded = expanded,
-                            onDismissRequest = { expanded = false }
-                        ) {
-                            if (uiState.isLoading) {
-                                DropdownMenuItem(
-                                    text = { 
-                                        Row(verticalAlignment = Alignment.CenterVertically) {
-                                            CircularProgressIndicator(modifier = Modifier.padding(end = 8.dp))
-                                            Text("Loading models...") 
-                                        }
-                                    },
-                                    onClick = { }
-                                )
-                            } else {
-                                uiState.availableModels.forEach { model ->
-                                DropdownMenuItem(
-                                    text = { Text(model) },
-                                    onClick = {
-                                        viewModel.updateModel(model)
-                                        expanded = false
-                                    }
-                                )
-                                }
-                            }
-                        }
-                    }
-                    
-                    if (uiState.availableModels.isEmpty() && !uiState.isLoading) {
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = "Connect to API to load available models",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.error
-                        )
-                    }
-                }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
+                // Temperature slider
                 Text(
                     text = "Temperature: ${temperature}",
                     style = MaterialTheme.typography.bodyMedium
@@ -258,6 +164,7 @@ fun SettingsScreen(
                 
                 Spacer(modifier = Modifier.height(16.dp))
                 
+                // Max Tokens slider
                 Text(
                     text = "Max Tokens: ${maxTokens.toInt()}",
                     style = MaterialTheme.typography.bodyMedium
@@ -454,32 +361,4 @@ fun FontSizeOption(
             style = MaterialTheme.typography.bodyMedium
         )
     }
-}
-
-@Composable
-fun SwitchSetting(
-    title: String,
-    checked: Boolean,
-    onCheckedChange: (Boolean) -> Unit
-) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        modifier = Modifier
-            .fillMaxWidth()
-            .clickable { onCheckedChange(!checked) }
-            .padding(vertical = 8.dp)
-    ) {
-        Text(
-            text = title,
-            style = MaterialTheme.typography.bodyLarge,
-            modifier = Modifier.weight(1f)
-        )
-        
-        Switch(
-            checked = checked,
-            onCheckedChange = onCheckedChange
-        )
-    }
-    
-    Divider()
 }
