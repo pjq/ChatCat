@@ -1,6 +1,6 @@
 # ChatCat AI
 
-ChatCat is a modern AI chat assistant built with Kotlin Multiplatform(Compose UI), offering an OpenAI-like experience across multiple platforms.
+ChatCat is a modern AI chat assistant built with Kotlin Multiplatform (Compose UI), offering an OpenAI-like experience across multiple platforms.
 
 ## Features
 
@@ -17,6 +17,7 @@ ChatCat is a modern AI chat assistant built with Kotlin Multiplatform(Compose UI
 - **Preference Management** - Store and manage user settings across sessions and platforms
 - **Internationalization (i18n)** - Support for multiple languages with easy language switching
 
+
 ## Project Structure
 
 * `/composeApp` contains code shared across your Compose Multiplatform applications:
@@ -32,11 +33,7 @@ ChatCat is a modern AI chat assistant built with Kotlin Multiplatform(Compose UI
 
 1. Clone the repository
 2. Open the project in Android Studio or IntelliJ IDEA
-3. Configure your OpenAI API settings in the app's settings screen or in the `local.properties` file:
-   ```
-   openai.api.key=your_api_key_here
-   ```
-4. Run the desired platform configuration:
+3. Run the desired platform configuration:
    - For Android: Use the Android run configuration
    - For Desktop: Run the `:composeApp:desktopRun` Gradle task
      - ./gradlew desktopRun -PmainClass=me.pjq.chatcat.MainKt
@@ -47,11 +44,10 @@ ChatCat is a modern AI chat assistant built with Kotlin Multiplatform(Compose UI
 
 ChatCat supports various configuration options:
 
-- **API Configuration**: Set your OpenAI API key and other connection parameters
+- **LLM Model Provider/API Configuration**: Set your LLM Model Provider Settings 
 - **Chat Settings**: Customize temperature, max tokens, and other model parameters
 - **UI Preferences**: Set theme, font size, and other display options
 - **Language Settings**: Choose your preferred language from multiple supported options
-- **Storage Settings**: Configure where and how conversations are saved
 
 These settings can be accessed through the settings screen in the app interface.
 
@@ -66,9 +62,7 @@ ChatCat is built using:
 - **Multiplatform Settings** - Cross-platform settings storage
 - **PreCompose** - Navigation framework
 - **Kotlinx Coroutines** - Asynchronous programming
-- **Kotlinx Datetime** - Date and time handling
 - **Multiplatform Markdown Renderer** - Markdown rendering
-- **MOKO Resources** - Cross-platform internationalization (i18n) support
 
 ## Building for Different Platforms
 
@@ -92,6 +86,20 @@ This will create platform-specific installers (DMG for macOS, MSI for Windows, D
 ```
 This will generate web assets in the `build/dist/wasmJs/productionExecutable` directory.
 
+## Screenshots
+
+### Chat Screen
+![Chat Screen](screenshots/chat_screen.png)
+
+### Conversation History
+![Conversation History](screenshots/conversation_history.png)
+
+### Model Provider Settings
+![Model Provider Settings](screenshots/model_provider_settings.png)
+
+### Settings
+![Settings](screenshots/settings.png)
+
 ## Internationalization (i18n)
 
 ChatCat supports multiple languages through its internationalization system, allowing users to interact with the app in their preferred language.
@@ -113,36 +121,6 @@ You can change the app language in the Settings screen:
 2. Scroll to the "Appearance" section
 3. Select your preferred language from the dropdown menu
 4. The app will immediately update to display text in the selected language
-
-### Adding New Translations
-
-Developers can add support for additional languages:
-
-1. Create a new language resource file in the appropriate directory:
-   ```
-   /composeApp/src/commonMain/resources/MR/{language_code}/strings.xml
-   ```
-2. Translate all string resources from the base (English) file
-3. Register the new language in the `LanguageManager.kt` file
-
-### Technical Implementation
-
-ChatCat uses MOKO Resources for cross-platform string management:
-
-- String resources are defined once in XML format
-- Resources are accessed through generated code
-- Platform-specific implementations handle locale changes
-- User language preference is stored in `UserPreferences`
-
-For developers working with i18n:
-
-```kotlin
-// Example of accessing localized strings
-Text(
-    text = stringResource(MR.strings.settings_title),
-    style = MaterialTheme.typography.titleLarge
-)
-```
 
 ## Additional Resources
 
