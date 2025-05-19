@@ -82,7 +82,7 @@ fun SettingsScreen(
                 actions = {
                     if (uiState.isApiAvailable) {
                         Text(
-                            text = "✓ API Connected",
+                            text = languageManager.getString(StringResources.API_CONNECTED),
                             color = MaterialTheme.colorScheme.primary,
                             modifier = Modifier.padding(end = 16.dp)
                         )
@@ -100,7 +100,7 @@ fun SettingsScreen(
                 .padding(16.dp)
         ) {
             // Model Providers Settings
-            SettingsSection(title = "Model Providers") {
+            SettingsSection(title = languageManager.getString(StringResources.SELECT_AND_MANAGE_PROVIDERS)) {
                 val activeProvider = uiState.activeProvider
                 
                 // Show active provider info
@@ -112,7 +112,7 @@ fun SettingsScreen(
                 ) {
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = "Active Provider: ${activeProvider.name}",
+                            text = languageManager.getString(StringResources.ACTIVE_PROVIDER) + ": ${activeProvider.name}",
                             style = MaterialTheme.typography.bodyLarge
                         )
                         
@@ -131,7 +131,7 @@ fun SettingsScreen(
                     onClick = onNavigateToModelProviders,
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text("Manage Model Providers")
+                    Text(languageManager.getString(StringResources.MANAGE_MODEL_PROVIDERS))
                 }
             }
             
@@ -152,7 +152,7 @@ fun SettingsScreen(
                 
                 // Temperature slider
                 Text(
-                    text = "Temperature: ${temperature}",
+                    text = languageManager.getString(StringResources.TEMPERATURE) + ": ${temperature}",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
@@ -173,7 +173,7 @@ fun SettingsScreen(
                 
                 // Max Tokens slider
                 Text(
-                    text = "Max Tokens: ${maxTokens.toInt()}",
+                    text = languageManager.getString(StringResources.MAX_TOKENS) + ": ${maxTokens.toInt()}",
                     style = MaterialTheme.typography.bodyMedium
                 )
                 
@@ -198,7 +198,7 @@ fun SettingsScreen(
                 }
                 
                 SwitchSetting(
-                    title = "Stream Mode",
+                    title = languageManager.getString(StringResources.STREAM_MODE),
                     checked = streamMode,
                     onCheckedChange = { 
                         streamMode = it
@@ -211,11 +211,11 @@ fun SettingsScreen(
             
             // Appearance Settings
             SettingsSection(title = languageManager.getString(StringResources.SETTINGS_APPEARANCE_SECTION)) {
-                Text(
-                    text = languageManager.getString(StringResources.SETTINGS_THEME),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                
+//                Text(
+//                    text = languageManager.getString(StringResources.TEMPERATURE) + ": ${temperature}",
+//                    style = MaterialTheme.typography.bodyMedium
+//                )
+//
                 Column(Modifier.selectableGroup()) {
                     ThemeOption(
                         title = languageManager.getString(StringResources.SETTINGS_THEME_LIGHT),
@@ -239,7 +239,7 @@ fun SettingsScreen(
                 Spacer(modifier = Modifier.height(16.dp))
                 
                 Text(
-                    text = "Font Size",
+                    text = languageManager.getString(StringResources.FONT_SIZE),
                     style = MaterialTheme.typography.bodyLarge
                 )
                 
@@ -288,7 +288,7 @@ fun SettingsScreen(
             // Other Settings
             SettingsSection(title = languageManager.getString(StringResources.SETTINGS_OTHER_SECTION)) {
                 SwitchSetting(
-                    title = "Sound Effects",
+                    title = languageManager.getString(StringResources.SOUND_EFFECTS),
                     checked = preferences.enableSoundEffects,
                     onCheckedChange = { viewModel.updateSoundEffectsEnabled(it) }
                 )
