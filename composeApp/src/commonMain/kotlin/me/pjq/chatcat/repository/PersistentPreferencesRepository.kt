@@ -2,6 +2,7 @@ package me.pjq.chatcat.repository
 
 import com.russhwolf.settings.coroutines.FlowSettings
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.combine // Make sure this import is present
 import kotlinx.coroutines.flow.map
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
@@ -39,20 +40,33 @@ class PersistentPreferencesRepository(
     }
     
     override suspend fun getUserPreferences(): Flow<UserPreferences> {
-        return settings.getStringOrNullFlow(PreferenceKeys.API_KEY).map { _ ->
-            val modelProviders = getModelProviders()
-            val activeProviderId = getActiveProviderId()
-            
+        // Combine flows for all relevant preference keys
+        return combine(
+            settings.getStringOrNullFlow(PreferenceKeys.API_KEY),
+            settings.getStringOrNullFlow(PreferenceKeys.API_BASE_URL),
+            settings.getStringOrNullFlow(PreferenceKeys.THEME),
+            settings.getStringOrNullFlow(PreferenceKeys.FONT_SIZE),
+            settings.getStringOrNullFlow(PreferenceKeys.DEFAULT_MODEL_CONFIG),
+            settings.getBooleanFlow(PreferenceKeys.SOUND_EFFECTS_ENABLED, true), // Default value for boolean
+            settings.getBooleanFlow(PreferenceKeys.MARKDOWN_ENABLED, true),     // Default value for boolean
+            settings.getStringOrNullFlow(PreferenceKeys.MODEL_PROVIDERS),
+            settings.getStringOrNullFlow(PreferenceKeys.ACTIVE_PROVIDER_ID)
+        ) { values ->
+            // The 'values' array contains the latest emissions from each combined flow
+            // We can now reconstruct UserPreferences using these values, or simply by calling the individual getters
+            // which will read the latest persisted state. Calling getters is simpler and less prone to error
+            // if the order of combine arguments changes.
+
             UserPreferences(
-                apiKey = getApiKey(),
+                apiKey = getApiKey(), 
                 apiBaseUrl = getApiBaseUrl(),
                 theme = getTheme(),
                 fontSize = getFontSize(),
                 defaultModelConfig = getDefaultModelConfig(),
                 enableSoundEffects = getSoundEffectsEnabled(),
                 enableMarkdown = getMarkdownEnabled(),
-                modelProviders = modelProviders,
-                activeProviderId = activeProviderId
+                modelProviders = getModelProviders(),
+                activeProviderId = getActiveProviderId()
             )
         }
     }
