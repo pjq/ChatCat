@@ -122,36 +122,6 @@ You can change the app language in the Settings screen:
 3. Select your preferred language from the dropdown menu
 4. The app will immediately update to display text in the selected language
 
-### Adding New Translations
-
-Developers can add support for additional languages:
-
-1. Create a new language resource file in the appropriate directory:
-   ```
-   /composeApp/src/commonMain/resources/MR/{language_code}/strings.xml
-   ```
-2. Translate all string resources from the base (English) file
-3. Register the new language in the `LanguageManager.kt` file
-
-### Technical Implementation
-
-ChatCat uses MOKO Resources for cross-platform string management:
-
-- String resources are defined once in XML format
-- Resources are accessed through generated code
-- Platform-specific implementations handle locale changes
-- User language preference is stored in `UserPreferences`
-
-For developers working with i18n:
-
-```kotlin
-// Example of accessing localized strings
-Text(
-    text = stringResource(MR.strings.settings_title),
-    style = MaterialTheme.typography.titleLarge
-)
-```
-
 ## Additional Resources
 
 Learn more about:

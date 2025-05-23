@@ -127,7 +127,7 @@ fun ChatScreen(
                                     color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
                                 ) {
                                     Text(
-                                        text = "🐱",
+                                        text = languageManager.getString(StringResources.CAT_EMOJI),
                                         style = MaterialTheme.typography.headlineMedium,
                                         modifier = Modifier.padding(8.dp),
                                         textAlign = TextAlign.Center
@@ -154,7 +154,7 @@ fun ChatScreen(
                         modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
                     ) {
                         Text(
-                            text = "Recent Conversations",
+                            text = languageManager.getString(StringResources.RECENT_CONVERSATIONS),
                             style = MaterialTheme.typography.titleSmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             modifier = Modifier.weight(1f)
@@ -204,7 +204,7 @@ fun ChatScreen(
                         Spacer(modifier = Modifier.width(12.dp))
                         Icon(
                             imageVector = Icons.Default.Settings,
-                            contentDescription = "Settings",
+                            contentDescription = languageManager.getString(StringResources.SETTINGS_TITLE),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                         
@@ -241,7 +241,7 @@ fun ChatScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Menu,
-                                contentDescription = "Open Menu",
+                                contentDescription = languageManager.getString(StringResources.OPEN_MENU),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -255,7 +255,7 @@ fun ChatScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Add,
-                                contentDescription = "New Chat",
+                                contentDescription = languageManager.getString(StringResources.NEW_CHAT),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -298,8 +298,7 @@ fun ChatScreen(
                                     // Use the ClipboardUtil to copy text to clipboard
                                     ClipboardUtil.copyToClipboard(content)
                                     showCopyConfirmation = true
-                                    copyConfirmationMessage = languageManager.getString(StringResources.COPY) + " - " + 
-                                                             languageManager.getString(StringResources.DONE)
+                                    copyConfirmationMessage = languageManager.getString(StringResources.COPY_CONFIRMATION)
                                 },
                                 onResendMessage = { msg ->
                                     viewModel.resendMessage(msg)
@@ -363,7 +362,7 @@ fun ChatScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Filled.Warning,
-                                contentDescription = "Error",
+                                contentDescription = languageManager.getString(StringResources.ERROR_DESCRIPTION),
                                 tint = MaterialTheme.colorScheme.error,
                                 modifier = Modifier.size(20.dp)
                             )

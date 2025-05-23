@@ -95,7 +95,7 @@ fun ModelProvidersScreen(
                 .padding(16.dp)
         ) {
             Text(
-                text = "Select and manage your AI model providers",
+                text = languageManager.getString(StringResources.SELECT_AND_MANAGE_PROVIDERS),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -104,7 +104,7 @@ fun ModelProvidersScreen(
             
             // Active provider section
             Text(
-                text = "Active Provider",
+                text = languageManager.getString(StringResources.ACTIVE_PROVIDER),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -137,7 +137,7 @@ fun ModelProvidersScreen(
             // OpenAI providers section
             if (providersByType.containsKey(ProviderType.OPENAI)) {
                 Text(
-                    text = "OpenAI Providers",
+                    text = languageManager.getString(StringResources.OPENAI_PROVIDERS),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -175,7 +175,7 @@ fun ModelProvidersScreen(
             // Compatible providers section
             if (providersByType.containsKey(ProviderType.OPENAI_COMPATIBLE)) {
                 Text(
-                    text = "Compatible Providers",
+                    text = languageManager.getString(StringResources.COMPATIBLE_PROVIDERS),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -211,7 +211,7 @@ fun ModelProvidersScreen(
             // Custom providers section
             if (providersByType.containsKey(ProviderType.CUSTOM)) {
                 Text(
-                    text = "Custom Providers",
+                    text = languageManager.getString(StringResources.CUSTOM_PROVIDERS),
                     style = MaterialTheme.typography.titleMedium,
                     color = MaterialTheme.colorScheme.primary
                 )
@@ -308,8 +308,8 @@ fun ProviderCard(
             Spacer(modifier = Modifier.height(8.dp))
             
             // Provider details
-            Text(
-                text = "Base URL: ${provider.baseUrl}",
+                Text(
+                    text = languageManager.getString(StringResources.BASE_URL) + ": ${provider.baseUrl}",
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -318,8 +318,8 @@ fun ProviderCard(
             Spacer(modifier = Modifier.height(16.dp))
             
             // API Settings
-            Text(
-                text = "API Settings",
+                Text(
+                    text = languageManager.getString(StringResources.API_SETTINGS),
                 style = MaterialTheme.typography.titleMedium,
                 color = MaterialTheme.colorScheme.primary
             )
@@ -331,7 +331,7 @@ fun ProviderCard(
             OutlinedTextField(
                 value = baseUrlText,
                 onValueChange = { baseUrlText = it },
-                label = { Text("API Base URL") },
+                    label = { Text(languageManager.getString(StringResources.API_BASE_URL)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true
             )
@@ -350,7 +350,7 @@ fun ProviderCard(
                         apiKeyText = it
                     }
                 },
-                label = { Text("API Key") },
+                label = { Text(languageManager.getString(StringResources.API_KEY)) },
                 modifier = Modifier.fillMaxWidth(),
                 singleLine = true,
                 enabled = true, // Always enabled
@@ -368,7 +368,7 @@ fun ProviderCard(
             if (!showApiKey && apiKeyText.isNotEmpty()) {
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = "Click the eye icon to show/edit the API key",
+                    text = languageManager.getString(StringResources.SHOW_EDIT_API_KEY),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
