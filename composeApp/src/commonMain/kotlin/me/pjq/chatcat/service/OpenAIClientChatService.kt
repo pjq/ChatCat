@@ -122,12 +122,14 @@ class OpenAIClientChatService(
                 maxTokens = modelConfig.maxTokens,
                 topP = modelConfig.topP,
                 frequencyPenalty = modelConfig.frequencyPenalty,
-                presencePenalty = modelConfig.presencePenalty
+                presencePenalty = modelConfig.presencePenalty,
+//                stream = modelConfig.stream  // Make sure stream mode is passed to the API request
             )
             
-            // Log the request payload for streaming requests
-            println("OpenAI API Request Payload (Streaming=${modelConfig.stream}):")
+            // Log the request payload with stream mode explicitly mentioned
+            println("OpenAI API Request Payload:")
             println("Model: ${effectiveModel} (from provider: ${activeProvider.name})")
+            println("Stream Mode: ${modelConfig.stream}")
             println("Temperature: ${modelConfig.temperature}")
             println("MaxTokens: ${modelConfig.maxTokens}")
             println("Messages: ${chatMessages.size} messages")
@@ -245,12 +247,14 @@ class OpenAIClientChatService(
                 maxTokens = modelConfig.maxTokens,
                 topP = modelConfig.topP,
                 frequencyPenalty = modelConfig.frequencyPenalty,
-                presencePenalty = modelConfig.presencePenalty
+                presencePenalty = modelConfig.presencePenalty,
+//                stream = modelConfig.stream  // Make sure stream mode is passed to the API request
             )
             
-            // Log the request payload for sync requests
+            // Log the request payload for sync requests with stream mode explicitly mentioned
             println("OpenAI API Request Payload (Sync Method):")
             println("Model: ${effectiveModel} (from provider: ${activeProvider.name})")
+            println("Stream Mode: ${modelConfig.stream}")
             println("Temperature: ${modelConfig.temperature}")
             println("MaxTokens: ${modelConfig.maxTokens}")
             println("Messages: ${chatMessages.size} messages")

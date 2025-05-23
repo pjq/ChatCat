@@ -10,13 +10,15 @@ import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import me.pjq.chatcat.model.Conversation
 import me.pjq.chatcat.model.Message
+import me.pjq.chatcat.model.ModelConfig
 import java.util.UUID
 
 /**
  * Implementation of ConversationRepository that persists data using Multiplatform Settings
  */
 class PersistentConversationRepository(
-    private val settings: Settings
+    private val settings: Settings,
+    private val preferencesRepository: PreferencesRepository
 ) : ConversationRepository {
     
     private val json = Json { 
@@ -84,9 +86,14 @@ class PersistentConversationRepository(
     }
     
     override suspend fun createConversation(title: String): Conversation {
+        // Get the default model config from user preferences
+        val defaultModelConfig = preferencesRepository.getUserPreferencesSync().defaultModelConfig
+        
+        // Create a new conversation with the default model config
         val conversation = Conversation(
             id = UUID.randomUUID().toString(),
-            title = title
+            title = title,
+            modelConfig = defaultModelConfig
         )
         conversations.add(conversation)
         saveConversation(conversation)
