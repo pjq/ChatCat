@@ -1,5 +1,6 @@
 package me.pjq.chatcat.ui.screens
 
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -8,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -32,6 +34,9 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Info
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
@@ -94,22 +99,77 @@ fun ModelProvidersScreen(
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            Text(
-                text = languageManager.getString(StringResources.SELECT_AND_MANAGE_PROVIDERS),
-                style = MaterialTheme.typography.bodyMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            // Header card with description
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = androidx.compose.material3.CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+                )
+            ) {
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier.padding(16.dp)
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "AI Model Providers",
+                            style = MaterialTheme.typography.titleLarge,
+                            color = MaterialTheme.colorScheme.onSurface
+                        )
+                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        Text(
+                            text = languageManager.getString(StringResources.SELECT_AND_MANAGE_PROVIDERS),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    
+                    // Info icon with subtle background
+                    androidx.compose.material3.Surface(
+                        shape = androidx.compose.foundation.shape.CircleShape,
+                        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.1f),
+                        modifier = Modifier.padding(start = 8.dp)
+                    ) {
+                        androidx.compose.material3.Icon(
+                            imageVector = androidx.compose.material.icons.Icons.Default.Info,
+                            contentDescription = "Model Provider Info",
+                            tint = MaterialTheme.colorScheme.primary,
+                            modifier = Modifier.padding(8.dp)
+                        )
+                    }
+                }
+            }
             
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(24.dp))
             
             // Active provider section
-            Text(
-                text = languageManager.getString(StringResources.ACTIVE_PROVIDER),
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+            // Enhanced section header for active provider
+            Row(
+                verticalAlignment = Alignment.CenterVertically,
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .background(
+                        color = MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                    )
+                    .padding(horizontal = 16.dp, vertical = 8.dp)
+            ) {
+                androidx.compose.material3.Icon(
+                    imageVector = androidx.compose.material.icons.Icons.Default.Star, 
+                    contentDescription = "Active Provider",
+                    tint = MaterialTheme.colorScheme.primary,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                Text(
+                    text = languageManager.getString(StringResources.ACTIVE_PROVIDER),
+                    style = MaterialTheme.typography.titleMedium,
+                    color = MaterialTheme.colorScheme.primary
+                )
+            }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(12.dp))
             
             // Show active provider at the top
             val activeProvider = providers.find { it.id == activeProviderId } ?: providers.firstOrNull()
@@ -136,13 +196,30 @@ fun ModelProvidersScreen(
             // Display providers by type
             // OpenAI providers section
             if (providersByType.containsKey(ProviderType.OPENAI)) {
-                Text(
-                    text = languageManager.getString(StringResources.OPENAI_PROVIDERS),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                // Enhanced section header for OpenAI providers
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "🤖",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = languageManager.getString(StringResources.OPENAI_PROVIDERS),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSecondaryContainer
+                    )
+                }
                 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 // OpenAI providers
                 providersByType[ProviderType.OPENAI]?.forEach { provider ->
@@ -174,13 +251,30 @@ fun ModelProvidersScreen(
             
             // Compatible providers section
             if (providersByType.containsKey(ProviderType.OPENAI_COMPATIBLE)) {
-                Text(
-                    text = languageManager.getString(StringResources.COMPATIBLE_PROVIDERS),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                // Enhanced section header for Compatible providers
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.tertiaryContainer.copy(alpha = 0.3f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "🔄",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = languageManager.getString(StringResources.COMPATIBLE_PROVIDERS),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onTertiaryContainer
+                    )
+                }
                 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 providersByType[ProviderType.OPENAI_COMPATIBLE]?.forEach { provider ->
                     var isActivating by remember { mutableStateOf(false) }
@@ -210,13 +304,30 @@ fun ModelProvidersScreen(
             
             // Custom providers section
             if (providersByType.containsKey(ProviderType.CUSTOM)) {
-                Text(
-                    text = languageManager.getString(StringResources.CUSTOM_PROVIDERS),
-                    style = MaterialTheme.typography.titleMedium,
-                    color = MaterialTheme.colorScheme.primary
-                )
+                // Enhanced section header for Custom providers
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(
+                            color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp)
+                        )
+                        .padding(horizontal = 16.dp, vertical = 8.dp)
+                ) {
+                    Text(
+                        text = "🛠️",
+                        style = MaterialTheme.typography.titleMedium,
+                        modifier = Modifier.padding(end = 8.dp)
+                    )
+                    Text(
+                        text = languageManager.getString(StringResources.CUSTOM_PROVIDERS),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
                 
-                Spacer(modifier = Modifier.height(8.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 providersByType[ProviderType.CUSTOM]?.forEach { provider ->
                     var isActivating by remember { mutableStateOf(false) }
@@ -268,15 +379,35 @@ fun ProviderCard(
 ) {
     
     Card(
-        modifier = Modifier.fillMaxWidth()
+        modifier = Modifier.fillMaxWidth(),
+        colors = androidx.compose.material3.CardDefaults.cardColors(
+            containerColor = if (isActive) 
+                MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.2f) 
+            else 
+                MaterialTheme.colorScheme.surface
+        )
     ) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
+            // Provider header with status badge
             Row(
                 verticalAlignment = Alignment.CenterVertically,
                 modifier = Modifier.fillMaxWidth()
             ) {
+                // Provider icon based on type
+                val providerIcon = when (provider.providerType) {
+                    ProviderType.OPENAI -> "🤖" 
+                    ProviderType.OPENAI_COMPATIBLE -> "🔄"
+                    ProviderType.CUSTOM -> "🛠️"
+                }
+                
+                Text(
+                    text = providerIcon,
+                    style = MaterialTheme.typography.headlineMedium,
+                    modifier = Modifier.padding(end = 8.dp)
+                )
+                
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
                         text = provider.name,
@@ -288,17 +419,28 @@ fun ProviderCard(
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
+                    
+                    // Show selected model if it exists
+                    if (provider.selectedModel.isNotBlank()) {
+                        Text(
+                            text = "Model: ${provider.selectedModel}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
                 
-                // Active status indicator
+                // Active status indicator as a badge
                 if (isActive) {
-                    Card(
+                    androidx.compose.material3.Surface(
+                        color = MaterialTheme.colorScheme.primary,
+                        shape = androidx.compose.foundation.shape.CircleShape,
                         modifier = Modifier.padding(8.dp)
                     ) {
                         Text(
-                            text = languageManager.getString(StringResources.SETTINGS_MODEL_SECTION),
+                            text = "Active",
                             style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.primary,
+                            color = MaterialTheme.colorScheme.onPrimary,
                             modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp)
                         )
                     }
@@ -575,7 +717,14 @@ fun ProviderCard(
             
             Spacer(modifier = Modifier.height(16.dp))
             
-            // Action buttons - simplified and more elegant
+            // Divider before action buttons
+            androidx.compose.material3.Divider(
+                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.5f),
+                thickness = 1.dp,
+                modifier = Modifier.padding(vertical = 8.dp)
+            )
+            
+            // Action buttons - improved layout with text labels
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
@@ -583,55 +732,101 @@ fun ProviderCard(
                 // Left side: Edit and Delete buttons
                 Row(
                     verticalAlignment = Alignment.CenterVertically,
-                    modifier = Modifier.weight(1f)
+                    modifier = Modifier.weight(1f),
+                    horizontalArrangement = androidx.compose.foundation.layout.Arrangement.Start
                 ) {
                     // Edit button
-                    IconButton(
-                        onClick = onEdit
+                    androidx.compose.material3.OutlinedButton(
+                        onClick = onEdit,
+                        contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                        modifier = Modifier.padding(end = 8.dp),
+                        colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                            contentColor = MaterialTheme.colorScheme.primary
+                        )
                     ) {
                         Text(
-                            text = "✏️",
-                            style = MaterialTheme.typography.bodyLarge
+                            text = "✏️ Edit",
+                            style = MaterialTheme.typography.bodyMedium
                         )
                     }
                     
                     // Delete button (only for non-default providers)
                     if (provider.id != DefaultModelProviders.OPENAI.id) {
-                        IconButton(
-                            onClick = onDelete
+                        androidx.compose.material3.OutlinedButton(
+                            onClick = onDelete,
+                            contentPadding = androidx.compose.foundation.layout.PaddingValues(horizontal = 12.dp, vertical = 8.dp),
+                            colors = androidx.compose.material3.ButtonDefaults.outlinedButtonColors(
+                                contentColor = MaterialTheme.colorScheme.error
+                            )
                         ) {
                             Text(
-                                text = "🗑️",
-                                style = MaterialTheme.typography.bodyLarge
+                                text = "🗑️ Delete",
+                                style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
                 }
                 
-                // Right side: Active switch or loading indicator
-                if (isActivating) {
+                // Right side: Active status or activation button
+                if (isActive) {
+                    // Show active status indicator for the active provider
+                    androidx.compose.material3.Button(
+                        onClick = { /* Already active */ },
+                        enabled = false,
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                            disabledContainerColor = MaterialTheme.colorScheme.primaryContainer,
+                            disabledContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = "✓ Active",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
+                } else if (isActivating) {
                     // Show loading indicator when activating
-                    CircularProgressIndicator(
-                        modifier = Modifier.padding(horizontal = 8.dp),
-                        color = MaterialTheme.colorScheme.primary,
-                        strokeWidth = 2.dp
-                    )
+                    androidx.compose.material3.Button(
+                        onClick = { /* In progress */ },
+                        enabled = false,
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primaryContainer,
+                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                        ),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(16.dp).padding(end = 4.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                            Spacer(modifier = Modifier.width(4.dp))
+                            Text(
+                                text = "Activating...",
+                                style = MaterialTheme.typography.bodyMedium
+                            )
+                        }
+                    }
                 } else {
-                    // Show switch when not activating
-                    androidx.compose.material3.Switch(
-                        checked = isActive,
-                        onCheckedChange = { checked -> 
-                            // Only call onSelect when activating a non-active provider
-                            if (checked && !isActive) onSelect() 
-                        },
-                        enabled = !isActive, // Only enable for non-active providers
-                        colors = androidx.compose.material3.SwitchDefaults.colors(
-                            checkedThumbColor = MaterialTheme.colorScheme.primary,
-                            checkedTrackColor = MaterialTheme.colorScheme.primaryContainer,
-                            checkedBorderColor = MaterialTheme.colorScheme.primary,
-                            uncheckedThumbColor = MaterialTheme.colorScheme.surfaceVariant
+                    // Show activation button for non-active providers
+                    androidx.compose.material3.Button(
+                        onClick = onSelect,
+                        colors = androidx.compose.material3.ButtonDefaults.buttonColors(
+                            containerColor = MaterialTheme.colorScheme.primary,
+                            contentColor = MaterialTheme.colorScheme.onPrimary
+                        ),
+                        modifier = Modifier.padding(end = 8.dp)
+                    ) {
+                        Text(
+                            text = "Activate",
+                            style = MaterialTheme.typography.bodyMedium
                         )
-                    )
+                    }
                 }
             }
         }

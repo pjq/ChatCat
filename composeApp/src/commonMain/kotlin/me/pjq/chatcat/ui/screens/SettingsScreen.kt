@@ -274,11 +274,21 @@ fun SettingsScreen(
             
             // Appearance Settings
             SettingsSection(title = languageManager.getString(StringResources.SETTINGS_APPEARANCE_SECTION)) {
-//                Text(
-//                    text = languageManager.getString(StringResources.TEMPERATURE) + ": ${temperature}",
-//                    style = MaterialTheme.typography.bodyMedium
-//                )
-//
+                // Language setting (moved to top)
+                Text(
+                    text = languageManager.getString(StringResources.SETTINGS_LANGUAGE),
+                    style = MaterialTheme.typography.bodyLarge
+                )
+                
+                // Language dropdown
+                LanguageSelector(
+                    selectedLanguage = preferences.language,
+                    onLanguageSelected = { viewModel.updateLanguage(it) }
+                )
+                
+                Spacer(modifier = Modifier.height(16.dp))
+                
+                // Theme options
                 Column(Modifier.selectableGroup()) {
                     ThemeOption(
                         title = languageManager.getString(StringResources.SETTINGS_THEME_LIGHT),
@@ -331,19 +341,6 @@ fun SettingsScreen(
                         onClick = { viewModel.updateFontSize(FontSize.EXTRA_LARGE) }
                     )
                 }
-                
-                Spacer(modifier = Modifier.height(16.dp))
-                
-                Text(
-                    text = languageManager.getString(StringResources.SETTINGS_LANGUAGE),
-                    style = MaterialTheme.typography.bodyLarge
-                )
-                
-                // Language dropdown
-                LanguageSelector(
-                    selectedLanguage = preferences.language,
-                    onLanguageSelected = { viewModel.updateLanguage(it) }
-                )
             }
             
             Spacer(modifier = Modifier.height(24.dp))

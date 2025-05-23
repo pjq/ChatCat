@@ -138,8 +138,25 @@ fun createNewConversation() {
             _uiState.update { it.copy(isLoading = true) }
             
             // Get current conversation with the new user message
-            val conversation = conversationRepository.getConversation(conversationId)
+            var conversation = conversationRepository.getConversation(conversationId)
             if (conversation != null) {
+                // Update the conversation's model config with the latest default config
+                val currentDefaultConfig = preferencesRepository.getUserPreferencesSync().defaultModelConfig
+                
+                // Only update the conversation if the configs are different
+                if (conversation.modelConfig != currentDefaultConfig) {
+                    val updatedConversation = conversation.copy(modelConfig = currentDefaultConfig)
+                    conversationRepository.updateConversation(updatedConversation)
+                    
+                        // Update the local reference to use the updated conversation
+                    val updatedConversationWithConfig = conversationRepository.getConversation(conversationId)
+                    if (updatedConversationWithConfig != null) {
+                        _uiState.update { it.copy(currentConversation = updatedConversationWithConfig) }
+                        // Use the updated conversation from here on
+                        conversation = updatedConversationWithConfig
+                    }
+                }
+                
                 val isStreamingEnabled = conversation.modelConfig.stream
                 
                 if (isStreamingEnabled) {

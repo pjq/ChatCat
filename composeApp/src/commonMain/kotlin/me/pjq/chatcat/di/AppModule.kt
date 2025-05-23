@@ -22,7 +22,8 @@ object AppModule {
     val conversationRepository: ConversationRepository by lazy {
         // Use our persistent implementation with persistent settings
         PersistentConversationRepository(
-            SettingsFactory.createSettings("chatcat_conversations")
+            SettingsFactory.createSettings("chatcat_conversations"),
+            preferencesRepository
         )
     }
     
