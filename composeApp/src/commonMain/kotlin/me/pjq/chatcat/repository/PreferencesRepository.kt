@@ -10,6 +10,9 @@ interface PreferencesRepository {
     suspend fun getUserPreferences(): Flow<UserPreferences>
     suspend fun updateUserPreferences(preferences: UserPreferences)
     
+    // Synchronous version to get current preferences without using Flow
+    fun getUserPreferencesSync(): UserPreferences
+    
     suspend fun getApiKey(): String
     suspend fun setApiKey(apiKey: String)
     

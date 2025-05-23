@@ -103,17 +103,31 @@ fun SettingsScreen(
             SettingsSection(title = languageManager.getString(StringResources.SELECT_AND_MANAGE_PROVIDERS)) {
                 val activeProvider = uiState.activeProvider
                 
-                // Show active provider info
-                Row(
-                    verticalAlignment = Alignment.CenterVertically,
+                // Show active provider info and selected model in a more visual way
+                Card(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .padding(vertical = 8.dp)
+                        .padding(vertical = 8.dp),
+                    colors = androidx.compose.material3.CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
+                    )
                 ) {
-                    Column(modifier = Modifier.weight(1f)) {
+                    Column(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(16.dp)
+                    ) {
+                        // Provider info
                         Text(
-                            text = languageManager.getString(StringResources.ACTIVE_PROVIDER) + ": ${activeProvider.name}",
-                            style = MaterialTheme.typography.bodyLarge
+                            text = languageManager.getString(StringResources.ACTIVE_PROVIDER),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        Text(
+                            text = activeProvider.name,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.onSurface
                         )
                         
                         Text(
@@ -121,10 +135,59 @@ fun SettingsScreen(
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        // Display API URL (truncated if too long)
+                        val displayUrl = if (activeProvider.baseUrl.length > 30) 
+                            activeProvider.baseUrl.take(27) + "..." 
+                        else 
+                            activeProvider.baseUrl
+                        
+                        Text(
+                            text = displayUrl,
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.8f)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(12.dp))
+                        
+                        // Model info with a subtle divider
+                        Divider(
+                            modifier = Modifier.padding(vertical = 4.dp),
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.2f)
+                        )
+                        
+                        Spacer(modifier = Modifier.height(4.dp))
+                        
+                        // Display the currently selected model
+                        Text(
+                            text = "Current Model",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        
+                        // Show the provider's selected model if available, otherwise the default model
+                        val modelToShow = if (activeProvider.selectedModel.isNotBlank()) {
+                            activeProvider.selectedModel
+                        } else {
+                            // Fallback to a default model based on provider type
+                            when (activeProvider.providerType) {
+                                ProviderType.OPENAI -> "gpt-3.5-turbo"
+                                ProviderType.OPENAI_COMPATIBLE -> "gpt-3.5-turbo"
+                                ProviderType.CUSTOM -> "model1"
+                            }
+                        }
+                        
+                        Text(
+                            text = modelToShow,
+                            style = MaterialTheme.typography.titleMedium,
+                            color = MaterialTheme.colorScheme.primary
+                        )
                     }
                 }
                 
-                Spacer(modifier = Modifier.height(16.dp))
+                Spacer(modifier = Modifier.height(12.dp))
                 
                 // Button to navigate to Model Providers screen
                 androidx.compose.material3.Button(

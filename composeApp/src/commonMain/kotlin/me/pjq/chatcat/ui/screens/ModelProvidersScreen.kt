@@ -426,11 +426,13 @@ fun ProviderCard(
                     mutableStateOf(preferences.defaultModelConfig.maxTokens.toFloat()) 
                 }
                 // Use remember with key to update when model changes
-                var modelExpanded by remember(preferences.defaultModelConfig.model) { mutableStateOf(false) }
-                
-                // Auto-load models when provider is active and models are empty
-                if (uiState.availableModels.isEmpty() && !uiState.isLoading && uiState.isApiAvailable) {
-                    androidx.compose.runtime.LaunchedEffect(provider.id) {
+                // Use a flag to track dropdown state, no longer based on defaultModelConfig.model
+                var modelExpanded by remember { mutableStateOf(false) }
+                // Always reload models when the provider screen is shown and the provider is active
+                // This ensures we always have the latest models for the current provider
+                androidx.compose.runtime.LaunchedEffect(provider.id) {
+                    // Only load if we're not already loading
+                    if (!uiState.isLoading) {
                         viewModel.loadAvailableModels()
                     }
                 }
@@ -449,8 +451,20 @@ fun ProviderCard(
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         // Make the text field clickable to open the dropdown
+                        // Use the provider's selected model if available, otherwise use an appropriate default
+                        val currentModel = if (provider.selectedModel.isNotBlank()) {
+                            provider.selectedModel
+                        } else {
+                            // Use a default based on provider type
+                            when (provider.providerType) {
+                                ProviderType.OPENAI -> "gpt-3.5-turbo"
+                                ProviderType.OPENAI_COMPATIBLE -> "gpt-3.5-turbo"
+                                ProviderType.CUSTOM -> "model1"
+                            }
+                        }
+                        
                         OutlinedTextField(
-                            value = preferences.defaultModelConfig.model,
+                            value = currentModel,
                             onValueChange = { },
                             label = { Text("Selected Model") },
                             modifier = Modifier
@@ -501,8 +515,31 @@ fun ProviderCard(
                                 )
                             } else {
                                 uiState.availableModels.forEach { model ->
+                                    // Check the provider's selected model instead of just the default model config
+                                    val activeProvider = uiState.activeProvider
+                                    // Only check against the provider's selected model - no longer using defaultModelConfig.model
+                                    val isSelected = activeProvider.selectedModel == model
+                                    
                                     DropdownMenuItem(
-                                        text = { Text(model) },
+                                        text = { 
+                                            Row(
+                                                verticalAlignment = Alignment.CenterVertically
+                                            ) {
+                                                if (isSelected) {
+                                                    Text(
+                                                        text = "✓ ",
+                                                        color = MaterialTheme.colorScheme.primary
+                                                    )
+                                                }
+                                                Text(
+                                                    text = model,
+                                                    color = if (isSelected) 
+                                                        MaterialTheme.colorScheme.primary 
+                                                    else 
+                                                        MaterialTheme.colorScheme.onSurface
+                                                )
+                                            }
+                                        },
                                         onClick = {
                                             viewModel.updateModel(model)
                                             modelExpanded = false

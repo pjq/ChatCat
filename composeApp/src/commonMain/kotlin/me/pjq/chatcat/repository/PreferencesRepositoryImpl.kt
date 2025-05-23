@@ -84,4 +84,9 @@ class PreferencesRepositoryImpl : PreferencesRepository {
         preferences = preferences.copy(activeProviderId = providerId)
         println("In-memory active provider ID updated: $providerId")
     }
+    
+    override fun getUserPreferencesSync(): UserPreferences {
+        // For in-memory implementation, we can simply return the current preferences
+        return preferences
+    }
 }

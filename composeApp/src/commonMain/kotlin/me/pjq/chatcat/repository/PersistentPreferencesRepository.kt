@@ -4,6 +4,7 @@ import com.russhwolf.settings.coroutines.FlowSettings
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine // Make sure this import is present
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import kotlinx.serialization.encodeToString
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
@@ -202,5 +203,21 @@ class PersistentPreferencesRepository(
     
     override suspend fun setMarkdownEnabled(enabled: Boolean) {
         settings.putBoolean(PreferenceKeys.MARKDOWN_ENABLED, enabled)
+    }
+    
+    override fun getUserPreferencesSync(): UserPreferences {
+        // This is a blocking implementation that directly reads all preferences
+        // Use this only when absolutely necessary, as it's not following reactive patterns
+        return UserPreferences(
+            apiKey = runBlocking { getApiKey() }, 
+            apiBaseUrl = runBlocking { getApiBaseUrl() },
+            theme = runBlocking { getTheme() },
+            fontSize = runBlocking { getFontSize() },
+            defaultModelConfig = runBlocking { getDefaultModelConfig() },
+            enableSoundEffects = runBlocking { getSoundEffectsEnabled() },
+            enableMarkdown = runBlocking { getMarkdownEnabled() },
+            modelProviders = runBlocking { getModelProviders() },
+            activeProviderId = runBlocking { getActiveProviderId() }
+        )
     }
 }

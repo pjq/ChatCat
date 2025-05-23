@@ -57,7 +57,20 @@ class OpenAIChatService(
                 )
             }
             
-            val request = ChatRequest.fromModelConfig(chatMessages, modelConfig)
+            // Get the active provider to obtain its selected model
+            val preferences = preferencesRepository.getUserPreferencesSync()
+            val activeProvider = preferences.modelProviders.find { it.id == preferences.activeProviderId }
+                ?: throw IllegalStateException("Active provider not found")
+            
+            // Get the model from the active provider's selectedModel property
+            val activeProviderModel = activeProvider.selectedModel
+            
+            // Create the request using the updated fromModelConfig method
+            val request = ChatRequest.fromModelConfig(
+                messages = chatMessages, 
+                modelConfig = modelConfig,
+                activeProviderModel = activeProviderModel
+            )
             
             if (modelConfig.stream) {
                 // Handle streaming response
@@ -171,8 +184,21 @@ class OpenAIChatService(
                     content = it.content
                 )
             }
-
-            val request = ChatRequest.fromModelConfig(chatMessages, modelConfig)
+            
+            // Get the active provider to obtain its selected model
+            val preferences = preferencesRepository.getUserPreferencesSync()
+            val activeProvider = preferences.modelProviders.find { it.id == preferences.activeProviderId }
+                ?: throw IllegalStateException("Active provider not found")
+            
+            // Get the model from the active provider's selectedModel property
+            val activeProviderModel = activeProvider.selectedModel
+            
+            // Create the request using the updated fromModelConfig method
+            val request = ChatRequest.fromModelConfig(
+                messages = chatMessages, 
+                modelConfig = modelConfig,
+                activeProviderModel = activeProviderModel
+            )
 
             val response = client.post("$baseUrl/chat/completions") {
                 contentType(ContentType.Application.Json)

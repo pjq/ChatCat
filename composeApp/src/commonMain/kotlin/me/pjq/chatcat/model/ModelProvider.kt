@@ -14,7 +14,8 @@ data class ModelProvider(
     val isEnabled: Boolean = true,
     val providerType: ProviderType = ProviderType.OPENAI,
     val availableModels: List<String> = emptyList(),
-    val isDefault: Boolean = false
+    val isDefault: Boolean = false,
+    val selectedModel: String = "" // Store the selected model for this specific provider
 )
 
 /**
@@ -36,7 +37,8 @@ object DefaultModelProviders {
         name = "OpenAI",
         baseUrl = "https://api.openai.com/v1",
         providerType = ProviderType.OPENAI,
-        isDefault = true
+        isDefault = true,
+        selectedModel = "gpt-4o" // Default model for OpenAI
     )
     
     val LOCAL_AI = ModelProvider(
@@ -44,7 +46,8 @@ object DefaultModelProviders {
         name = "LocalAI",
         baseUrl = "http://localhost:8080/v1",
         providerType = ProviderType.OPENAI_COMPATIBLE,
-        isEnabled = false
+        isEnabled = false,
+        selectedModel = "gpt-4o" // Default model for LocalAI
     )
     
     fun getDefaultProviders(): List<ModelProvider> {

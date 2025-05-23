@@ -16,9 +16,29 @@ data class ChatRequest(
     val stream: Boolean = false
 ) {
     companion object {
-        fun fromModelConfig(messages: List<ChatMessage>, modelConfig: ModelConfig): ChatRequest {
+        /**
+         * Create a ChatRequest from a ModelConfig and the active provider.
+         * 
+         * @param messages The list of chat messages
+         * @param modelConfig The model configuration settings
+         * @param activeProviderModel The model string from the active provider's selectedModel property
+         * @param fallbackModel Optional fallback model to use if activeProviderModel is blank
+         */
+        fun fromModelConfig(
+            messages: List<ChatMessage>, 
+            modelConfig: ModelConfig,
+            activeProviderModel: String,
+            fallbackModel: String = "gpt-4o"
+        ): ChatRequest {
+            // Use the active provider's selected model, with fallback if it's blank
+            val effectiveModel = if (activeProviderModel.isNotBlank()) {
+                activeProviderModel
+            } else {
+                fallbackModel
+            }
+            
             return ChatRequest(
-                model = modelConfig.model,
+                model = effectiveModel,
                 messages = messages,
                 temperature = modelConfig.temperature,
                 maxTokens = modelConfig.maxTokens,

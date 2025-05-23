@@ -62,17 +62,49 @@ class SettingsViewModel : ViewModel() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
             try {
-                val models = modelService.listModels()
-                // If no models are returned, use some default OpenAI models for testing
+                // Get the most up-to-date active provider from preferences
+                val preferences = preferencesRepository.getUserPreferencesSync()
+                val activeProviderId = preferences.activeProviderId
+                val provider = preferences.modelProviders.find { it.id == activeProviderId } 
+                    ?: DefaultModelProviders.OPENAI
+                
+                // Update activeProvider in uiState to ensure consistency
+                _uiState.update { it.copy(activeProvider = provider) }
+                
+                // Apply the provider's settings to ensure we're using the right API URL and key
+                preferencesRepository.setApiBaseUrl(provider.baseUrl)
+                preferencesRepository.setApiKey(provider.apiKey)
+                
+                // Create a fresh OpenAI client with current provider settings
+                val tempModelService = OpenAIClientChatService(preferencesRepository)
+                
+                println("Loading models for provider: ${provider.name} (${provider.id})")
+                println("Base URL: ${provider.baseUrl}")
+                val models = tempModelService.listModels()
+                
+                // If no models are returned, use some default models based on provider type
                 val modelList = if (models.isEmpty()) {
-                    listOf("gpt-4o", "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo")
+                    when (provider.providerType) {
+                        ProviderType.OPENAI -> listOf("gpt-4o", "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo")
+                        ProviderType.OPENAI_COMPATIBLE, ProviderType.CUSTOM -> listOf("gpt-3.5-turbo", "gpt-4")
+                    }
                 } else {
                     models
                 }
+                
+                println("Available models: ${modelList.joinToString(", ")}")
                 _uiState.update { it.copy(availableModels = modelList, isLoading = false) }
             } catch (e: Exception) {
-                // Use default OpenAI models if there's an error
-                val defaultModels = listOf("gpt-4o", "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo")
+                // Use default models based on provider type if there's an error
+                val currentProvider = _uiState.value.activeProvider
+                val defaultModels = when (currentProvider.providerType) {
+                    ProviderType.OPENAI -> listOf("gpt-4o", "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo")
+                    ProviderType.OPENAI_COMPATIBLE, ProviderType.CUSTOM -> listOf("gpt-3.5-turbo", "gpt-4")
+                }
+                
+                println("Error loading models: ${e.message}")
+                e.printStackTrace()
+                
                 _uiState.update { 
                     it.copy(
                         availableModels = defaultModels, 
@@ -128,9 +160,30 @@ class SettingsViewModel : ViewModel() {
     
     fun updateModel(model: String) {
         viewModelScope.launch {
-            val currentModelConfig = _uiState.value.preferences.defaultModelConfig
-            val updatedModelConfig = currentModelConfig.copy(model = model)
-            updateDefaultModelConfig(updatedModelConfig)
+            // Only update the selected model for the active provider
+            // No longer storing model in ModelConfig since that's been removed
+            val currentPrefs = _uiState.value.preferences
+            val activeProviderId = currentPrefs.activeProviderId
+            
+            // Find and update the active provider
+            val updatedProviders = currentPrefs.modelProviders.map { provider ->
+                if (provider.id == activeProviderId) {
+                    // Update this provider's selected model
+                    provider.copy(selectedModel = model)
+                } else {
+                    provider
+                }
+            }
+            
+            // Save the updated providers list
+            val updatedPrefs = currentPrefs.copy(modelProviders = updatedProviders)
+            preferencesRepository.updateUserPreferences(updatedPrefs)
+            
+            // Log the change
+            println("Updated selected model for provider '$activeProviderId' to: $model")
+            
+            // Update UI state
+            _uiState.update { it.copy(preferences = updatedPrefs) }
         }
     }
     
@@ -192,35 +245,66 @@ class SettingsViewModel : ViewModel() {
             val currentPreferences = _uiState.value.preferences
             
             // Find the provider in the list
-            val provider = currentPreferences.modelProviders.find { it.id == providerId }
+            var activeProvider = currentPreferences.modelProviders.find { it.id == providerId }
                 ?: DefaultModelProviders.OPENAI
             
-            // Create updated preferences with the new active provider ID
-            val updatedPreferences = currentPreferences.copy(activeProviderId = providerId)
+            // Check if we need to set a default model for this provider
+            if (activeProvider.selectedModel.isBlank()) {
+                // Find a suitable default model based on provider type
+                val defaultModel = when (activeProvider.providerType) {
+                    ProviderType.OPENAI -> "gpt-3.5-turbo"
+                    ProviderType.OPENAI_COMPATIBLE -> "gpt-3.5-turbo"
+                    ProviderType.CUSTOM -> "model1"
+                }
+                
+                // Update the provider with a selected model
+                val updatedProvider = activeProvider.copy(selectedModel = defaultModel)
+                val updatedProviders = currentPreferences.modelProviders.map {
+                    if (it.id == providerId) updatedProvider else it
+                }
+                
+                // Update the activeProvider reference for later use
+                activeProvider = updatedProvider
+                
+                // Create updated preferences with the updated providers
+                val updatedPreferences = currentPreferences.copy(
+                    activeProviderId = providerId,
+                    modelProviders = updatedProviders
+                )
+                
+                preferencesRepository.updateUserPreferences(updatedPreferences)
+            } else {
+                // Create updated preferences with the new active provider ID
+                val updatedPreferences = currentPreferences.copy(activeProviderId = providerId)
+                preferencesRepository.updateUserPreferences(updatedPreferences)
+            }
             
-            // Persist the updated preferences
-            preferencesRepository.updateUserPreferences(updatedPreferences)
+            println("Setting active provider to: ${activeProvider.name}, with model: ${activeProvider.selectedModel}")
             
             // Update the active provider ID in the repository directly
             preferencesRepository.setActiveProviderId(providerId)
             
             // Update API settings based on the selected provider
-            preferencesRepository.setApiBaseUrl(provider.baseUrl)
-            preferencesRepository.setApiKey(provider.apiKey)
+            preferencesRepository.setApiBaseUrl(activeProvider.baseUrl)
+            preferencesRepository.setApiKey(activeProvider.apiKey)
             
             // Update UI state with the new preferences and active provider
             _uiState.update { 
                 it.copy(
-                    preferences = updatedPreferences,
-                    activeProvider = provider
+                    preferences = preferencesRepository.getUserPreferencesSync(),
+                    activeProvider = activeProvider,
+                    availableModels = emptyList() // Clear models when switching providers
                 ) 
             }
             
             // Log the change for debugging
-            println("Active provider set to: ${provider.name}, ID: ${provider.id}")
+            println("Active provider set to: ${activeProvider.name}, ID: ${activeProvider.id}, Model: ${activeProvider.selectedModel}")
             
             // Check API availability with the new settings
             checkApiAvailability()
+            
+            // Load available models for the new provider
+            loadAvailableModels()
         }
     }
     
@@ -238,13 +322,34 @@ class SettingsViewModel : ViewModel() {
             
             // Find if provider already exists
             val updatedProviders = if (currentProviders.any { it.id == provider.id }) {
-                // Update existing provider
-                currentProviders.map { 
-                    if (it.id == provider.id) provider else it 
+                // Update existing provider but preserve its selected model
+                currentProviders.map { existingProvider -> 
+                    if (existingProvider.id == provider.id) {
+                        // Preserve the existing selected model if the new one is blank
+                        val modelToUse = if (provider.selectedModel.isBlank() && existingProvider.selectedModel.isNotBlank()) {
+                            existingProvider.selectedModel
+                        } else {
+                            provider.selectedModel
+                        }
+                        provider.copy(selectedModel = modelToUse)
+                    } else {
+                        existingProvider 
+                    }
                 }
             } else {
-                // Add new provider
-                currentProviders + provider
+                // For new providers, ensure they have a selected model
+                val newProvider = if (provider.selectedModel.isBlank()) {
+                    // Use an appropriate default model based on provider type
+                    val defaultModel = when (provider.providerType) {
+                        ProviderType.OPENAI -> "gpt-3.5-turbo"
+                        ProviderType.OPENAI_COMPATIBLE -> "gpt-3.5-turbo"
+                        ProviderType.CUSTOM -> "model1"
+                    }
+                    provider.copy(selectedModel = defaultModel)
+                } else {
+                    provider
+                }
+                currentProviders + newProvider
             }
             
             // Update preferences with the new provider list
@@ -307,13 +412,17 @@ class SettingsViewModel : ViewModel() {
     }
     
     fun createNewProvider() {
+        // Use a default model based on provider type
+        val defaultModel = "gpt-4o" // Default for OPENAI_COMPATIBLE
+        
         val newProvider = ModelProvider(
             id = "provider_${System.currentTimeMillis()}",
             name = "New Provider",
-            baseUrl = "https://api.example.com",
+            baseUrl = "https://api.openai.com/v1",
             apiKey = "",
             isEnabled = true,
-            providerType = ProviderType.OPENAI_COMPATIBLE
+            providerType = ProviderType.OPENAI_COMPATIBLE,
+            selectedModel = defaultModel // Initialize with a default model
         )
         startEditingProvider(newProvider)
     }
