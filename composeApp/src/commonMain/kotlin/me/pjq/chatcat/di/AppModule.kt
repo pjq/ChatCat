@@ -41,4 +41,8 @@ object AppModule {
     val languageManager by lazy {
         LanguageManager.getInstance(preferencesRepository)
     }
+
+    val settingsViewModel: me.pjq.chatcat.viewmodel.SettingsViewModel by lazy {
+        me.pjq.chatcat.viewmodel.SettingsViewModel()
+    }
 }

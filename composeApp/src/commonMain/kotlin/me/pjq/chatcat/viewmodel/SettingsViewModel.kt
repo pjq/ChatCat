@@ -46,7 +46,7 @@ class SettingsViewModel : ViewModel() {
                 val activeProvider = preferences.modelProviders.find { it.id == activeProviderId }
                     ?: DefaultModelProviders.OPENAI
                 
-                _uiState.update { it.copy(activeProvider = activeProvider) }
+                _uiState.update { it.copy(activeProvider = activeProvider, selectedModel = activeProvider.selectedModel) }
             }
         }
     }
@@ -183,7 +183,7 @@ class SettingsViewModel : ViewModel() {
             println("Updated selected model for provider '$activeProviderId' to: $model")
             
             // Update UI state
-            _uiState.update { it.copy(preferences = updatedPrefs) }
+            _uiState.update { it.copy(preferences = updatedPrefs, selectedModel = model) }
         }
     }
     
@@ -436,5 +436,6 @@ data class SettingsUiState(
     val availableModels: List<String> = emptyList(),
     val activeProvider: ModelProvider = DefaultModelProviders.OPENAI,
     val isEditingProvider: Boolean = false,
-    val editingProvider: ModelProvider? = null
+    val editingProvider: ModelProvider? = null,
+    val selectedModel: String = ""
 )

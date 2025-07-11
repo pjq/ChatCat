@@ -13,7 +13,6 @@ import me.pjq.chatcat.di.AppModule
 import me.pjq.chatcat.model.Conversation
 import me.pjq.chatcat.model.Message
 import me.pjq.chatcat.model.Role
-import me.pjq.chatcat.model.UserPreferences
 import me.pjq.chatcat.repository.ConversationRepository
 import me.pjq.chatcat.repository.PreferencesRepository
 import me.pjq.chatcat.service.ChatService
@@ -23,6 +22,7 @@ class ChatViewModel : ViewModel() {
     private val conversationRepository: ConversationRepository = AppModule.conversationRepository
     private val chatService: ChatService = AppModule.chatService
     private val preferencesRepository: PreferencesRepository = AppModule.preferencesRepository
+    private val settingsViewModel: SettingsViewModel = AppModule.settingsViewModel
     
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
@@ -31,24 +31,45 @@ class ChatViewModel : ViewModel() {
     
     init {
         loadConversations()
+        loadAvailableModels()
+        observeSettings()
     }
-    
-private fun loadConversations() {
-    viewModelScope.launch {
-        conversationRepository.getConversations().collectLatest { conversations ->
-            _uiState.update { it.copy(conversations = conversations) }
-            
-            // Update current conversation if it's in the list
-            currentConversationId?.let { id ->
-                val currentConversation = conversations.find { it.id == id }
-                if (currentConversation != null) {
-                    _uiState.update { it.copy(currentConversation = currentConversation) }
+
+    private fun observeSettings() {
+        viewModelScope.launch {
+            settingsViewModel.uiState.collect { settingsUiState ->
+                _uiState.update {
+                    it.copy(
+                        availableModels = settingsUiState.availableModels,
+                        selectedModel = settingsUiState.activeProvider.selectedModel
+                    )
                 }
             }
         }
     }
-}
     
+    private fun loadAvailableModels() {
+        viewModelScope.launch {
+            settingsViewModel.loadAvailableModels()
+        }
+    }
+
+    private fun loadConversations() {
+        viewModelScope.launch {
+            conversationRepository.getConversations().collectLatest { conversations ->
+                _uiState.update { it.copy(conversations = conversations) }
+
+                // Update current conversation if it's in the list
+                currentConversationId?.let { id ->
+                    val currentConversation = conversations.find { it.id == id }
+                    if (currentConversation != null) {
+                        _uiState.update { it.copy(currentConversation = currentConversation) }
+                    }
+                }
+            }
+        }
+    }
+
     fun selectConversation(conversationId: String) {
         viewModelScope.launch {
             val conversation = conversationRepository.getConversation(conversationId)
@@ -87,6 +108,12 @@ fun createNewConversation() {
         }
     }
     
+    fun selectModel(model: String) {
+        viewModelScope.launch {
+            settingsViewModel.updateModel(model)
+        }
+    }
+
     fun sendMessage(content: String) {
         if (content.isBlank()) return
         
@@ -257,5 +284,7 @@ data class ChatUiState(
     val currentConversation: Conversation? = null,
     val isLoading: Boolean = false,
     val isStreaming: Boolean = false,
-    val error: String? = null
+    val error: String? = null,
+    val availableModels: List<String> = emptyList(),
+    val selectedModel: String = ""
 )
