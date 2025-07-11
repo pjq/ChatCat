@@ -69,8 +69,7 @@ class ChatViewModel : ViewModel() {
             }
         }
     }
-}
-    
+
     fun selectConversation(conversationId: String) {
         viewModelScope.launch {
             val conversation = conversationRepository.getConversation(conversationId)
