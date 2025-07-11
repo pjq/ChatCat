@@ -140,20 +140,26 @@ fun createNewConversation() {
             // Get current conversation with the new user message
             var conversation = conversationRepository.getConversation(conversationId)
             if (conversation != null) {
-                // Update the conversation's model config with the latest default config
-                val currentDefaultConfig = preferencesRepository.getUserPreferencesSync().defaultModelConfig
+                // Get user preferences to find the active provider and selected model
+                val userPreferences = preferencesRepository.getUserPreferencesSync()
+                val activeProvider = userPreferences.modelProviders.find { it.id == userPreferences.activeProviderId }
                 
-                // Only update the conversation if the configs are different
-                if (conversation.modelConfig != currentDefaultConfig) {
-                    val updatedConversation = conversation.copy(modelConfig = currentDefaultConfig)
-                    conversationRepository.updateConversation(updatedConversation)
+                activeProvider?.selectedModel?.let { selectedModel ->
+                    // Create a new modelConfig with the selected model
+                    val newModelConfig = conversation.modelConfig.copy(model = selectedModel)
                     
+                    // Only update the conversation if the configs are different
+                    if (conversation.modelConfig != newModelConfig) {
+                        val updatedConversation = conversation.copy(modelConfig = newModelConfig)
+                        conversationRepository.updateConversation(updatedConversation)
+
                         // Update the local reference to use the updated conversation
-                    val updatedConversationWithConfig = conversationRepository.getConversation(conversationId)
-                    if (updatedConversationWithConfig != null) {
-                        _uiState.update { it.copy(currentConversation = updatedConversationWithConfig) }
-                        // Use the updated conversation from here on
-                        conversation = updatedConversationWithConfig
+                        val updatedConversationWithConfig = conversationRepository.getConversation(conversationId)
+                        if (updatedConversationWithConfig != null) {
+                            _uiState.update { it.copy(currentConversation = updatedConversationWithConfig) }
+                            // Use the updated conversation from here on
+                            conversation = updatedConversationWithConfig
+                        }
                     }
                 }
                 
