@@ -2,6 +2,7 @@ package me.pjq.chatcat.ui.navigation
 
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
+import me.pjq.chatcat.di.AppModule
 import me.pjq.chatcat.ui.screens.ChatScreen
 import me.pjq.chatcat.ui.screens.ModelProvidersScreen
 import me.pjq.chatcat.ui.screens.SettingsScreen
@@ -31,6 +32,7 @@ fun AppNavigation() {
                 content = {
                     ChatScreen(
                         viewModel = chatViewModel,
+                            settingsViewModel = settingsViewModel,
                         onNavigateToSettings = {
                             navigator.navigate(Route.SETTINGS)
                         }

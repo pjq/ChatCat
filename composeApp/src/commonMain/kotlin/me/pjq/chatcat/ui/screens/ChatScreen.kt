@@ -22,6 +22,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Menu
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.Warning
@@ -39,6 +40,8 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
 import me.pjq.chatcat.di.AppModule
@@ -62,6 +65,7 @@ import me.pjq.chatcat.ui.components.ChatInput
 import me.pjq.chatcat.ui.components.ConversationListItem
 import me.pjq.chatcat.ui.components.MessageBubble
 import me.pjq.chatcat.viewmodel.ChatViewModel
+import me.pjq.chatcat.viewmodel.SettingsViewModel
 import moe.tlaster.precompose.navigation.BackHandler
 import org.jetbrains.compose.resources.ExperimentalResourceApi
 import org.jetbrains.compose.resources.painterResource
@@ -70,10 +74,12 @@ import org.jetbrains.compose.resources.painterResource
 @Composable
 fun ChatScreen(
     viewModel: ChatViewModel,
+    settingsViewModel: SettingsViewModel,
     onNavigateToSettings: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
+    val settingsUiState by settingsViewModel.uiState.collectAsState()
     val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
     val scope = rememberCoroutineScope()
     
@@ -248,8 +254,17 @@ fun ChatScreen(
                     },
                     // Add "New Chat" button to the right side of the title bar
                     actions = {
+                        // Model Selection Dropdown
+                        ModelSelectionDropdown(
+                            availableModels = settingsUiState.availableModels,
+                            selectedModel = settingsUiState.activeProvider.selectedModel,
+                            onModelSelected = { model ->
+                                viewModel.selectModel(model)
+                            }
+                        )
+
                         IconButton(
-                            onClick = { 
+                            onClick = {
                                 viewModel.createNewConversation()
                             }
                         ) {
@@ -385,6 +400,42 @@ fun ChatScreen(
                     },
                     onAttachFile = { /* TODO: Implement file attachment */ },
                     isLoading = uiState.isLoading
+                )
+            }
+        }
+    }
+}
+
+@Composable
+fun ModelSelectionDropdown(
+    availableModels: List<String>,
+    selectedModel: String,
+    onModelSelected: (String) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Box {
+        IconButton(onClick = { expanded = true }) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text(selectedModel.take(12) + if (selectedModel.length > 12) "..." else "") // Truncate if too long
+                Icon(
+                    imageVector = Icons.Default.ArrowDropDown,
+                    contentDescription = "Select Model"
+                )
+            }
+        }
+
+        DropdownMenu(
+            expanded = expanded,
+            onDismissRequest = { expanded = false }
+        ) {
+            availableModels.forEach { model ->
+                DropdownMenuItem(
+                    text = { Text(model) },
+                    onClick = {
+                        onModelSelected(model)
+                        expanded = false
+                    }
                 )
             }
         }
