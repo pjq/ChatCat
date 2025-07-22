@@ -61,27 +61,41 @@ class SettingsViewModel : ViewModel() {
     fun loadAvailableModels() {
         viewModelScope.launch {
             _uiState.update { it.copy(isLoading = true) }
+
+            // Get the most up-to-date active provider from preferences
+            val preferences = preferencesRepository.getUserPreferencesSync()
+            val activeProviderId = preferences.activeProviderId
+            val provider = preferences.modelProviders.find { it.id == activeProviderId }
+                ?: DefaultModelProviders.OPENAI
+
+            // First, load from cache if available
+            if (provider.availableModels.isNotEmpty()) {
+                _uiState.update {
+                    it.copy(
+                        availableModels = provider.availableModels,
+                        isLoading = false,
+                        activeProvider = provider
+                    )
+                }
+                return@launch
+            }
+
+
             try {
-                // Get the most up-to-date active provider from preferences
-                val preferences = preferencesRepository.getUserPreferencesSync()
-                val activeProviderId = preferences.activeProviderId
-                val provider = preferences.modelProviders.find { it.id == activeProviderId } 
-                    ?: DefaultModelProviders.OPENAI
-                
                 // Update activeProvider in uiState to ensure consistency
                 _uiState.update { it.copy(activeProvider = provider) }
-                
+
                 // Apply the provider's settings to ensure we're using the right API URL and key
                 preferencesRepository.setApiBaseUrl(provider.baseUrl)
                 preferencesRepository.setApiKey(provider.apiKey)
-                
+
                 // Create a fresh OpenAI client with current provider settings
                 val tempModelService = OpenAIClientChatService(preferencesRepository)
-                
+
                 println("Loading models for provider: ${provider.name} (${provider.id})")
                 println("Base URL: ${provider.baseUrl}")
                 val models = tempModelService.listModels()
-                
+
                 // If no models are returned, use some default models based on provider type
                 val modelList = if (models.isEmpty()) {
                     when (provider.providerType) {
@@ -91,9 +105,20 @@ class SettingsViewModel : ViewModel() {
                 } else {
                     models
                 }
-                
+
                 println("Available models: ${modelList.joinToString(", ")}")
                 _uiState.update { it.copy(availableModels = modelList, isLoading = false) }
+
+                // Cache the fetched models
+                val updatedProviders = preferences.modelProviders.map {
+                    if (it.id == activeProviderId) {
+                        it.copy(availableModels = modelList)
+                    } else {
+                        it
+                    }
+                }
+                preferencesRepository.updateUserPreferences(preferences.copy(modelProviders = updatedProviders))
+
             } catch (e: Exception) {
                 // Use default models based on provider type if there's an error
                 val currentProvider = _uiState.value.activeProvider
@@ -101,16 +126,16 @@ class SettingsViewModel : ViewModel() {
                     ProviderType.OPENAI -> listOf("gpt-4o", "gpt-4", "gpt-3.5-turbo", "gpt-4-turbo")
                     ProviderType.OPENAI_COMPATIBLE, ProviderType.CUSTOM -> listOf("gpt-3.5-turbo", "gpt-4")
                 }
-                
+
                 println("Error loading models: ${e.message}")
                 e.printStackTrace()
-                
-                _uiState.update { 
+
+                _uiState.update {
                     it.copy(
-                        availableModels = defaultModels, 
+                        availableModels = defaultModels,
                         isLoading = false,
                         error = e.message
-                    ) 
+                    )
                 }
             }
         }
