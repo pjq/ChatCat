@@ -75,7 +75,7 @@ class OpenAIChatService(
             return@flow
         }
         val model = provider.selectedModel.ifBlank { provider.availableModels.firstOrNull() ?: "gpt-4o" }
-        val baseUrl = provider.baseUrl.trimEnd('/')
+        val baseUrl = normalizeBaseUrl(provider.baseUrl)
 
         val payload = buildChatPayload(
             model = model,
@@ -261,13 +261,13 @@ class OpenAIChatService(
         val provider = prefs.modelProviders.firstOrNull { it.id == prefs.activeProviderId } ?: return false
         val apiKey = provider.apiKey.ifBlank { prefs.apiKey }
         if (apiKey.isBlank()) return false
-        val response = httpClient.get("${provider.baseUrl.trimEnd('/')}/models") { applyAuth(apiKey) }
+        val response = httpClient.get("${normalizeBaseUrl(provider.baseUrl)}/models") { applyAuth(apiKey) }
         response.status.isSuccess()
     }.getOrDefault(false)
 
     /** Test an arbitrary baseUrl + apiKey and return discovered models. Used by the provider editor. */
     suspend fun probe(baseUrl: String, apiKey: String): Result<List<String>> = runCatching {
-        val response = httpClient.get("${baseUrl.trimEnd('/')}/models") {
+        val response = httpClient.get("${normalizeBaseUrl(baseUrl)}/models") {
             if (apiKey.isNotBlank()) headers { append(HttpHeaders.Authorization, "Bearer $apiKey") }
         }
         if (!response.status.isSuccess()) {
@@ -283,7 +283,7 @@ class OpenAIChatService(
         val provider = prefs.modelProviders.firstOrNull { it.id == prefs.activeProviderId } ?: return emptyList()
         val apiKey = provider.apiKey.ifBlank { prefs.apiKey }
         if (apiKey.isBlank()) return provider.availableModels
-        val response = httpClient.get("${provider.baseUrl.trimEnd('/')}/models") { applyAuth(apiKey) }
+        val response = httpClient.get("${normalizeBaseUrl(provider.baseUrl)}/models") { applyAuth(apiKey) }
         if (!response.status.isSuccess()) return provider.availableModels
         val body = response.body<String>()
         val data = json.parseToJsonElement(body).jsonObject["data"]?.jsonArray ?: return provider.availableModels
@@ -305,3 +305,42 @@ class OpenAIChatService(
 }
 
 private fun JsonPrimitive.contentOrNullSafe(): String? = if (isString) content else content.takeIf { it != "null" }
+
+/**
+ * Normalizes a base URL so callers can append `/chat/completions` or `/models` directly.
+ * Handles common user mistakes:
+ *  - Trailing slashes: "https://api.openai.com/v1/" → "https://api.openai.com/v1"
+ *  - Missing /v1: "https://api.openai.com" → "https://api.openai.com/v1"
+ *  - Duplicate /v1: "https://api.openai.com/v1/v1" → "https://api.openai.com/v1"
+ *  - Full endpoint pasted: "https://api.openai.com/v1/chat/completions" → "https://api.openai.com/v1"
+ *  - Ollama (port 11434) without /v1: adds /v1
+ *
+ * Skips adding /v1 for URLs that already end with a versioned path (e.g. /v1, /v1beta, /v2).
+ */
+internal fun normalizeBaseUrl(raw: String): String {
+    var url = raw.trim().trimEnd('/')
+
+    // Strip accidentally pasted endpoint paths
+    val endpointSuffixes = listOf("/chat/completions", "/completions", "/models", "/embeddings", "/images/generations")
+    for (suffix in endpointSuffixes) {
+        if (url.endsWith(suffix, ignoreCase = true)) {
+            url = url.dropLast(suffix.length).trimEnd('/')
+            break
+        }
+    }
+
+    // Fix duplicate /v1/v1
+    while (url.endsWith("/v1/v1")) {
+        url = url.dropLast(3) // remove one "/v1"
+    }
+
+    // Check if URL already ends with a version segment like /v1, /v1beta, /v2, etc.
+    val lastSegment = url.substringAfterLast('/')
+    val hasVersionSegment = lastSegment.matches(Regex("v\\d+.*"))
+
+    if (!hasVersionSegment) {
+        url = "$url/v1"
+    }
+
+    return url
+}
