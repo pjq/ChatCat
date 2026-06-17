@@ -89,10 +89,6 @@ kotlin {
             // Add explicit dependency for HttpTimeout
             implementation("io.ktor:ktor-client-core:3.1.3")
             
-            // OpenAI Kotlin client
-             implementation("com.aallam.openai:openai-client:4.0.1")
-            // implementation("io.ktor:ktor-client-core-jvm:3.1.3")
-
             // Serialization
             implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
             
@@ -119,18 +115,13 @@ kotlin {
         androidMain.dependencies {
             implementation(compose.preview)
             implementation(libs.androidx.activity.compose)
-            // Platform-specific Ktor HTTP client engine
-            implementation("io.ktor:ktor-client-android:3.1.3")
-            // OpenAI client engine - use implementation instead of runtimeOnly
             implementation("io.ktor:ktor-client-okhttp:3.1.3")
-            // Add HttpTimeout support explicitly for Android
-            implementation("io.ktor:ktor-client-core-jvm:3.1.3")
+            implementation("androidx.activity:activity-compose:1.10.1")
+            implementation("io.coil-kt.coil3:coil-compose:3.0.4")
+            implementation("io.coil-kt.coil3:coil-network-okhttp:3.0.4")
         }
-        
+
         iosMain.dependencies {
-            // Platform-specific Ktor HTTP client engine
-            implementation("io.ktor:ktor-client-darwin:3.1.3")
-            // OpenAI client engine - use implementation instead of runtimeOnly
             implementation("io.ktor:ktor-client-darwin:3.1.3")
         }
         
@@ -141,18 +132,11 @@ kotlin {
         desktopMain.dependencies {
             implementation(compose.desktop.currentOs)
             implementation(libs.kotlinx.coroutinesSwing)
-            // Platform-specific Ktor HTTP client engine
-            implementation("io.ktor:ktor-client-java:3.1.3")
-            // OpenAI client engine - use implementation instead of runtimeOnly
             implementation("io.ktor:ktor-client-okhttp:3.1.3")
         }
-        
+
         wasmJsMain.dependencies {
-            // Platform-specific Ktor HTTP client engine
             implementation("io.ktor:ktor-client-js:3.1.3")
-            // OpenAI client engine - use implementation instead of runtimeOnly
-            implementation("io.ktor:ktor-client-js:3.1.3")
-            
         }
     }
 }

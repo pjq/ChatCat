@@ -1,3 +1,5 @@
+@file:OptIn(com.russhwolf.settings.ExperimentalSettingsApi::class)
+
 package me.pjq.chatcat.repository
 
 import com.russhwolf.settings.Settings

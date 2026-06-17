@@ -1,5 +1,6 @@
 package me.pjq.chatcat.ui.screens
 
+import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -22,351 +23,167 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowDropDown
-import androidx.compose.material.icons.filled.Menu
-import androidx.compose.material.icons.filled.Settings
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Divider
-import androidx.compose.material3.DrawerValue
+import androidx.compose.material.icons.filled.ExpandMore
+import androidx.compose.material.icons.outlined.Bolt
+import androidx.compose.material.icons.outlined.Hub
+import androidx.compose.material.icons.outlined.Menu
+import androidx.compose.material.icons.outlined.Settings
+import androidx.compose.material.icons.outlined.Warning
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FloatingActionButton
+import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalDrawerSheet
 import androidx.compose.material3.ModalNavigationDrawer
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Snackbar
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.rememberDrawerState
-import me.pjq.chatcat.di.AppModule
-import me.pjq.chatcat.i18n.StringResources
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import kotlinx.coroutines.launch
-import me.pjq.chatcat.model.Message
-import me.pjq.chatcat.util.ClipboardUtil
+import me.pjq.chatcat.di.AppModule
+import me.pjq.chatcat.model.ContentPart
+import me.pjq.chatcat.platform.rememberImagePicker
 import me.pjq.chatcat.ui.components.ChatInput
 import me.pjq.chatcat.ui.components.ConversationListItem
 import me.pjq.chatcat.ui.components.MessageBubble
+import me.pjq.chatcat.util.ClipboardUtil
 import me.pjq.chatcat.viewmodel.ChatViewModel
-import me.pjq.chatcat.viewmodel.SettingsViewModel
-import moe.tlaster.precompose.navigation.BackHandler
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalResourceApi::class)
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ChatScreen(
     viewModel: ChatViewModel,
-    settingsViewModel: SettingsViewModel,
     onNavigateToSettings: () -> Unit,
+    onNavigateToMcp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
     val uiState by viewModel.uiState.collectAsState()
-    val settingsUiState by settingsViewModel.uiState.collectAsState()
-    val drawerState = rememberDrawerState(initialValue = DrawerValue.Closed)
+    val drawerState = rememberDrawerState(initialValue = androidx.compose.material3.DrawerValue.Closed)
     val scope = rememberCoroutineScope()
-    
-    // State for copy confirmation toast
-    var showCopyConfirmation by remember { mutableStateOf(false) }
-    var copyConfirmationMessage by remember { mutableStateOf("") }
-    
-    // Auto-hide toast after delay
-    if (showCopyConfirmation) {
-        LaunchedEffect(showCopyConfirmation) {
-            kotlinx.coroutines.delay(2000)
-            showCopyConfirmation = false
-        }
-    }
-    
-    // Get the language manager
-    val languageManager = AppModule.languageManager
-    
-    BackHandler(enabled = drawerState.isOpen) {
-        scope.launch {
-            drawerState.close()
-        }
+    val pendingImages = remember { mutableStateListOf<ContentPart.Image>() }
+
+    val picker = rememberImagePicker { image ->
+        pendingImages.add(image)
     }
 
     ModalNavigationDrawer(
         drawerState = drawerState,
         drawerContent = {
-            ModalDrawerSheet(
-                modifier = Modifier.width(300.dp) // Set a maximum width for the drawer
-            ) {
-                Column(
-                    modifier = Modifier.fillMaxHeight()
-                ) {
-                    // Elegant drawer header
-                    Surface(
-                        color = MaterialTheme.colorScheme.primary,
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        Box(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(vertical = 24.dp, horizontal = 16.dp)
-                        ) {
-                            Row(
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                // App logo
-                                Surface(
-                                    modifier = Modifier.size(48.dp),
-                                    shape = CircleShape,
-                                    color = MaterialTheme.colorScheme.onPrimary.copy(alpha = 0.2f)
-                                ) {
-                                    Text(
-                                        text = languageManager.getString(StringResources.CAT_EMOJI),
-                                        style = MaterialTheme.typography.headlineMedium,
-                                        modifier = Modifier.padding(8.dp),
-                                        textAlign = TextAlign.Center
-                                    )
-                                }
-                                
-                                Spacer(modifier = Modifier.width(12.dp))
-                                
-                                Text(
-                                    text = languageManager.getString(StringResources.APP_NAME),
-                                    style = MaterialTheme.typography.headlineSmall,
-                                    color = MaterialTheme.colorScheme.onPrimary
-                                )
-                            }
-                        }
-                    }
-                    
-                    
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    // Conversation list header
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)
-                    ) {
-                        Text(
-                            text = languageManager.getString(StringResources.RECENT_CONVERSATIONS),
-                            style = MaterialTheme.typography.titleSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.weight(1f)
-                        )
-                        
-                        Text(
-                            text = "${uiState.conversations.size}",
-                            style = MaterialTheme.typography.labelMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                        )
-                    }
-                    
-                    // Conversation list
-                    LazyColumn(
-                        modifier = Modifier.weight(1f),
-                        contentPadding = PaddingValues(vertical = 8.dp)
-                    ) {
-                        items(uiState.conversations) { conversation ->
-                            ConversationListItem(
-                                conversation = conversation,
-                                isSelected = uiState.currentConversation?.id == conversation.id,
-                                onClick = {
-                                    viewModel.selectConversation(conversation.id)
-                                    scope.launch {
-                                        drawerState.close()
-                                    }
-                                },
-                                onDelete = {
-                                    viewModel.deleteConversation(conversation.id)
-                                }
-                            )
-                        }
-                    }
-                    
-                    Divider(modifier = Modifier.padding(vertical = 0.dp))
-                    
-                    // Settings button
-                    Row(
-                        verticalAlignment = Alignment.CenterVertically,
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .height(48.dp)
-                            .padding(horizontal = 0.dp, vertical = 0.dp)
-                            .clickable { onNavigateToSettings() }
-                    ) {
-                    Spacer(modifier = Modifier.height(14.dp))
-                        Spacer(modifier = Modifier.width(12.dp))
-                        Icon(
-                            imageVector = Icons.Default.Settings,
-                            contentDescription = languageManager.getString(StringResources.SETTINGS_TITLE),
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                        
-                        Spacer(modifier = Modifier.width(12.dp))
-                        
-                        Text(
-                            text = languageManager.getString(StringResources.NAV_SETTINGS),
-                            style = MaterialTheme.typography.titleMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    
-                    Spacer(modifier = Modifier.height(14.dp))
+            ChatDrawer(
+                conversations = uiState.conversations,
+                currentId = uiState.currentConversation?.id,
+                onSelect = {
+                    viewModel.selectConversation(it)
+                    scope.launch { drawerState.close() }
+                },
+                onDelete = viewModel::deleteConversation,
+                onNew = {
+                    viewModel.createNewConversation()
+                    scope.launch { drawerState.close() }
+                },
+                onSettings = {
+                    scope.launch { drawerState.close() }
+                    onNavigateToSettings()
+                },
+                onMcp = {
+                    scope.launch { drawerState.close() }
+                    onNavigateToMcp()
                 }
-            }
+            )
         },
         modifier = modifier
     ) {
-        // Use a different Scaffold configuration to ensure the title bar stays visible
         Scaffold(
             topBar = {
-                // Make the TopAppBar fixed and not scrollable
                 TopAppBar(
-                    title = { 
-                        Text(uiState.currentConversation?.title ?: languageManager.getString(StringResources.NAV_CHAT)) 
-                    },
-                    navigationIcon = {
-                        IconButton(
-                            onClick = {
-                                scope.launch {
-                                    drawerState.open()
-                                }
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Menu,
-                                contentDescription = languageManager.getString(StringResources.OPEN_MENU),
-                                tint = MaterialTheme.colorScheme.onSurface
+                    title = {
+                        Column {
+                            Text(
+                                text = uiState.currentConversation?.title ?: "ChatCat",
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.SemiBold
                             )
+                            if (uiState.mcpEnabled) {
+                                Text(
+                                    "🛠 MCP active",
+                                    style = MaterialTheme.typography.labelSmall,
+                                    color = MaterialTheme.colorScheme.primary
+                                )
+                            }
                         }
                     },
-                    // Add "New Chat" button to the right side of the title bar
+                    navigationIcon = {
+                        IconButton(onClick = { scope.launch { drawerState.open() } }) {
+                            Icon(Icons.Outlined.Menu, contentDescription = "Menu")
+                        }
+                    },
                     actions = {
-                        // Model Selection Dropdown
-                        ModelSelectionDropdown(
-                            availableModels = settingsUiState.availableModels,
-                            selectedModel = settingsUiState.activeProvider.selectedModel,
-                            onModelSelected = { model ->
-                                viewModel.selectModel(model)
-                            }
+                        ModelPickerChip(
+                            availableModels = uiState.availableModels,
+                            selected = uiState.selectedModel,
+                            onSelect = viewModel::selectModel
                         )
-
-                        IconButton(
-                            onClick = {
-                                viewModel.createNewConversation()
-                            }
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Add,
-                                contentDescription = languageManager.getString(StringResources.NEW_CHAT),
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
+                        IconButton(onClick = viewModel::createNewConversation) {
+                            Icon(Icons.Filled.Add, contentDescription = "New chat")
                         }
                     }
                 )
-            },
-            // Add a snackbar host for copy confirmation
-            snackbarHost = {
-                if (showCopyConfirmation) {
-                    Snackbar {
-                        Text(copyConfirmationMessage)
-                    }
-                }
             }
-        ) { paddingValues ->
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-            ) {
-                // Messages list
+        ) { padding ->
+            Column(modifier = Modifier.padding(padding).fillMaxSize()) {
                 val messages = uiState.currentConversation?.messages ?: emptyList()
                 val listState = rememberLazyListState()
-                
-                // Chat messages area - give it more space and make it more elegant
-                Box(
-                    modifier = Modifier
-                        .weight(1f) // Use more space for the chat area
-                        .fillMaxWidth()
-                ) {
+
+                LaunchedEffect(messages.size, messages.lastOrNull()?.text?.length) {
+                    if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
+                }
+
+                if (messages.isEmpty()) {
+                    EmptyState(modifier = Modifier.weight(1f))
+                } else {
                     LazyColumn(
                         state = listState,
-                        modifier = Modifier.fillMaxSize(),
-                        contentPadding = PaddingValues(vertical = 8.dp) // Add padding at top and bottom
+                        modifier = Modifier.weight(1f),
+                        contentPadding = PaddingValues(vertical = 12.dp)
                     ) {
-                        items(messages) { message ->
+                        items(messages, key = { it.id }) { msg ->
                             MessageBubble(
-                                message = message,
-                                onCopyMessage = { content ->
-                                    // Use the ClipboardUtil to copy text to clipboard
-                                    ClipboardUtil.copyToClipboard(content)
-                                    showCopyConfirmation = true
-                                    copyConfirmationMessage = languageManager.getString(StringResources.COPY_CONFIRMATION)
-                                },
-                                onResendMessage = { msg ->
-                                    viewModel.resendMessage(msg)
-                                },
-                                onDeleteMessage = { messageId ->
-                                    viewModel.deleteMessage(messageId)
-                                },
-                                isStreaming = uiState.isStreaming
+                                message = msg,
+                                isStreaming = uiState.isStreaming && msg == messages.last(),
+                                onCopy = { ClipboardUtil.copyToClipboard(it) },
+                                onResend = viewModel::resendMessage,
+                                onDelete = viewModel::deleteMessage
                             )
-                        }
-                        
-                        // Show loading or streaming indicator if waiting for response
-                        if (uiState.isLoading) {
-                            item {
-                                Box(
-                                    modifier = Modifier
-                                        .fillMaxWidth()
-                                        .padding(vertical = 12.dp),
-                                    contentAlignment = Alignment.Center
-                                ) {
-                                    Row(
-                                        verticalAlignment = Alignment.CenterVertically,
-                                        horizontalArrangement = Arrangement.Center
-                                    ) {
-                                        // Add a subtle loading animation
-                                        CircularProgressIndicator(
-                                            modifier = Modifier.size(16.dp),
-                                            strokeWidth = 2.dp,
-                                            color = MaterialTheme.colorScheme.secondary
-                                        )
-                                        
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        
-                                        Text(
-                                            text = if (uiState.isStreaming) 
-                                                languageManager.getString(StringResources.WRITING) 
-                                            else 
-                                                languageManager.getString(StringResources.THINKING),
-                                            style = MaterialTheme.typography.bodySmall,
-                                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                                        )
-                                    }
-                                }
-                            }
                         }
                     }
                 }
-                
-                // Error message if any - make it more elegant
-                uiState.error?.let { error ->
+
+                AnimatedVisibility(visible = uiState.error != null) {
+                    val message = uiState.error ?: ""
                     Surface(
                         color = MaterialTheme.colorScheme.errorContainer,
-                        shape = RoundedCornerShape(8.dp),
+                        shape = RoundedCornerShape(12.dp),
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 8.dp)
@@ -376,30 +193,34 @@ fun ChatScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Icon(
-                                imageVector = Icons.Filled.Warning,
-                                contentDescription = languageManager.getString(StringResources.ERROR_DESCRIPTION),
-                                tint = MaterialTheme.colorScheme.error,
-                                modifier = Modifier.size(20.dp)
+                                Icons.Outlined.Warning,
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onErrorContainer,
+                                modifier = Modifier.size(18.dp)
                             )
-                            
-                            Spacer(modifier = Modifier.width(8.dp))
-                            
+                            Spacer(Modifier.width(8.dp))
                             Text(
-                                text = error,
+                                message,
                                 color = MaterialTheme.colorScheme.onErrorContainer,
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
                     }
                 }
-                
-                // Input area
+
                 ChatInput(
-                    onSendMessage = { message ->
-                        viewModel.sendMessage(message)
+                    onSend = { text, attachments ->
+                        viewModel.sendMessage(text, attachments)
+                        pendingImages.clear()
                     },
-                    onAttachFile = { /* TODO: Implement file attachment */ },
-                    isLoading = uiState.isLoading
+                    onPickImage = if (uiState.canSendImages && picker.isAvailable) ({ picker.launch() }) else null,
+                    onGenerateImage = if (uiState.canGenerateImages) viewModel::generateImage else null,
+                    onCancel = viewModel::cancel,
+                    pendingImages = pendingImages.toList(),
+                    onRemoveImage = { idx -> pendingImages.removeAt(idx) },
+                    isLoading = uiState.isLoading,
+                    canSendImages = uiState.canSendImages,
+                    canGenerateImages = uiState.canGenerateImages
                 )
             }
         }
@@ -407,37 +228,169 @@ fun ChatScreen(
 }
 
 @Composable
-fun ModelSelectionDropdown(
+private fun EmptyState(modifier: Modifier = Modifier) {
+    Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Box(
+                modifier = Modifier
+                    .size(72.dp)
+                    .clip(CircleShape)
+                    .background(MaterialTheme.colorScheme.primaryContainer),
+                contentAlignment = Alignment.Center
+            ) {
+                Text("🐱", style = MaterialTheme.typography.displaySmall)
+            }
+            Spacer(Modifier.height(16.dp))
+            Text(
+                "How can I help today?",
+                style = MaterialTheme.typography.headlineSmall,
+                color = MaterialTheme.colorScheme.onSurface
+            )
+            Spacer(Modifier.height(6.dp))
+            Text(
+                "Send a message, attach an image, or describe one to generate.",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                textAlign = TextAlign.Center,
+                modifier = Modifier.padding(horizontal = 32.dp)
+            )
+        }
+    }
+}
+
+@Composable
+private fun ModelPickerChip(
     availableModels: List<String>,
-    selectedModel: String,
-    onModelSelected: (String) -> Unit
+    selected: String,
+    onSelect: (String) -> Unit
 ) {
     var expanded by remember { mutableStateOf(false) }
-
+    val display = if (selected.isBlank()) "Pick model" else selected
     Box {
-        IconButton(onClick = { expanded = true }) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(selectedModel.take(12) + if (selectedModel.length > 12) "..." else "") // Truncate if too long
-                Icon(
-                    imageVector = Icons.Default.ArrowDropDown,
-                    contentDescription = "Select Model"
-                )
-            }
-        }
-
-        DropdownMenu(
-            expanded = expanded,
-            onDismissRequest = { expanded = false }
-        ) {
-            availableModels.forEach { model ->
+        AssistChip(
+            onClick = { expanded = true },
+            label = { Text(display.take(18) + if (display.length > 18) "…" else "") },
+            leadingIcon = {
+                Icon(Icons.Outlined.Bolt, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            trailingIcon = {
+                Icon(Icons.Filled.ExpandMore, contentDescription = null, modifier = Modifier.size(16.dp))
+            },
+            colors = AssistChipDefaults.assistChipColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer,
+                labelColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                leadingIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer,
+                trailingIconContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            )
+        )
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
+            if (availableModels.isEmpty()) {
                 DropdownMenuItem(
-                    text = { Text(model) },
-                    onClick = {
-                        onModelSelected(model)
-                        expanded = false
-                    }
+                    text = { Text("No models — set up provider in Settings") },
+                    onClick = { expanded = false }
                 )
+            } else {
+                availableModels.forEach { model ->
+                    DropdownMenuItem(
+                        text = { Text(model) },
+                        onClick = {
+                            onSelect(model)
+                            expanded = false
+                        }
+                    )
+                }
             }
         }
+    }
+}
+
+@Composable
+private fun ChatDrawer(
+    conversations: List<me.pjq.chatcat.model.Conversation>,
+    currentId: String?,
+    onSelect: (String) -> Unit,
+    onDelete: (String) -> Unit,
+    onNew: () -> Unit,
+    onSettings: () -> Unit,
+    onMcp: () -> Unit
+) {
+    ModalDrawerSheet(modifier = Modifier.width(320.dp)) {
+        Column(modifier = Modifier.fillMaxHeight()) {
+            Surface(
+                color = MaterialTheme.colorScheme.primaryContainer,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text(
+                        "ChatCat",
+                        style = MaterialTheme.typography.headlineSmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer,
+                        fontWeight = FontWeight.Bold
+                    )
+                    Text(
+                        "Multimodal AI chat",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+                    )
+                }
+            }
+            DrawerActionRow(
+                icon = Icons.Filled.Add,
+                label = "New conversation",
+                onClick = onNew
+            )
+            HorizontalDivider(
+                modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                color = MaterialTheme.colorScheme.outlineVariant
+            )
+            Text(
+                text = "Conversations",
+                style = MaterialTheme.typography.labelMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.padding(start = 16.dp, top = 8.dp, bottom = 4.dp)
+            )
+            LazyColumn(modifier = Modifier.weight(1f), contentPadding = PaddingValues(vertical = 4.dp)) {
+                items(conversations, key = { it.id }) { conversation ->
+                    ConversationListItem(
+                        conversation = conversation,
+                        isSelected = conversation.id == currentId,
+                        onClick = { onSelect(conversation.id) },
+                        onDelete = { onDelete(conversation.id) }
+                    )
+                }
+            }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
+            DrawerActionRow(icon = Icons.Outlined.Hub, label = "MCP servers", onClick = onMcp)
+            DrawerActionRow(icon = Icons.Outlined.Settings, label = "Settings", onClick = onSettings)
+            Spacer(Modifier.height(12.dp))
+        }
+    }
+}
+
+@Composable
+private fun DrawerActionRow(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    label: String,
+    onClick: () -> Unit
+) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onClick)
+            .padding(horizontal = 20.dp, vertical = 12.dp)
+    ) {
+        Icon(
+            icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurface,
+            modifier = Modifier.size(20.dp)
+        )
+        Spacer(Modifier.width(16.dp))
+        Text(
+            label,
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurface
+        )
     }
 }

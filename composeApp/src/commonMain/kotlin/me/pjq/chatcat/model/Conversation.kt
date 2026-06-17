@@ -11,14 +11,16 @@ data class Conversation(
     val messages: List<Message> = emptyList(),
     val createdAt: Instant = Clock.System.now(),
     val updatedAt: Instant = Clock.System.now(),
-    val modelConfig: ModelConfig = ModelConfig()
+    val modelConfig: ModelConfig = ModelConfig(),
+    val pinned: Boolean = false,
+    val systemPrompt: String? = null,
+    val enabledMcpServerIds: List<String> = emptyList()
 )
 
 @Serializable
 data class ModelConfig(
-    // model is now maintained by each provider in its selectedModel property
-    val temperature: Double = 0.7,
-    val maxTokens: Int = 2000,
+    val temperature: Double = 1.0,
+    val maxTokens: Int = 4096,
     val topP: Double = 1.0,
     val frequencyPenalty: Double = 0.0,
     val presencePenalty: Double = 0.0,

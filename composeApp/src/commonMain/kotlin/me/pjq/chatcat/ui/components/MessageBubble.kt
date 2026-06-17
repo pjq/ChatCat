@@ -1,171 +1,237 @@
 package me.pjq.chatcat.ui.components
 
+import androidx.compose.animation.core.animateFloatAsState
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.widthIn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.outlined.ContentCopy
+import androidx.compose.material.icons.outlined.DeleteOutline
+import androidx.compose.material.icons.outlined.Refresh
+import androidx.compose.material3.AssistChip
+import androidx.compose.material3.AssistChipDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import me.pjq.chatcat.di.AppModule
+import me.pjq.chatcat.model.ContentPart
+import me.pjq.chatcat.model.ImageSource
 import me.pjq.chatcat.model.Message
 import me.pjq.chatcat.model.Role
-import me.pjq.chatcat.ui.theme.ChatCatColors
-import me.pjq.chatcat.ui.theme.getMessageBackgroundColor
-import org.jetbrains.compose.resources.ExperimentalResourceApi
-import org.jetbrains.compose.resources.painterResource
 
-@OptIn(ExperimentalResourceApi::class)
 @Composable
 fun MessageBubble(
     message: Message,
-    modifier: Modifier = Modifier,
-    onCopyMessage: ((String) -> Unit)? = null,
-    onResendMessage: ((Message) -> Unit)? = null,
-    onDeleteMessage: ((String) -> Unit)? = null,
-    isStreaming: Boolean = false
+    isStreaming: Boolean,
+    onCopy: (String) -> Unit,
+    onResend: (Message) -> Unit,
+    onDelete: (String) -> Unit,
+    modifier: Modifier = Modifier
 ) {
-    val isUserMessage = message.role == Role.USER
-    val alignment = if (isUserMessage) Alignment.End else Alignment.Start
-    val backgroundColor = getMessageBackgroundColor(isUserMessage)
-    val bubbleShape = RoundedCornerShape(
-        topStart = if (isUserMessage) 16.dp else 0.dp,
-        topEnd = if (isUserMessage) 0.dp else 16.dp,
-        bottomStart = 16.dp,
-        bottomEnd = 16.dp
-    )
-    
-    Column(
+    val isUser = message.role == Role.USER
+    val arrangement = if (isUser) Arrangement.End else Arrangement.Start
+
+    Row(
         modifier = modifier
             .fillMaxWidth()
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalAlignment = alignment
+            .padding(horizontal = 16.dp, vertical = 6.dp),
+        horizontalArrangement = arrangement,
+        verticalAlignment = Alignment.Top
     ) {
-        Row(
-            verticalAlignment = Alignment.Top
+        if (!isUser) AssistantAvatar()
+        Column(
+            modifier = Modifier.widthIn(max = 480.dp).padding(horizontal = 8.dp),
+            horizontalAlignment = if (isUser) Alignment.End else Alignment.Start
         ) {
-            if (!isUserMessage) {
-                // Assistant avatar
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(ChatCatColors.catPrimary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    // Replace with actual cat icon when available
-                    Text(
-                        text = "🐱",
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center
-                    )
-                }
-                Spacer(modifier = Modifier.width(8.dp))
-            }
-            
-            Column {
-                Box(
-                    modifier = Modifier
-                        .clip(bubbleShape)
-                        .background(backgroundColor)
-                        .padding(12.dp)
-                ) {
-                    // Use MarkdownText to render message content
-                    MarkdownText(
-                        markdown = message.content,
-                        style = MaterialTheme.typography.bodyMedium,
-                        isError = message.isError,
-                        isStreaming = isStreaming && message.role == Role.ASSISTANT
-                    )
-                }
-                
-                // Display attachments if any
-                message.attachments.forEach { attachment ->
-                    AttachmentItem(attachment = attachment)
-                }
-                
-                // Action buttons (copy, resend, delete)
-                if (onCopyMessage != null || onResendMessage != null || onDeleteMessage != null) {
-                    Row(
-                        modifier = Modifier.padding(top = 4.dp)
-                    ) {
-                        // Only show copy button if callback is provided
-                        onCopyMessage?.let {
-                            IconButton(
-                                onClick = { onCopyMessage(message.content) },
-                                modifier = Modifier.size(24.dp)
-                            ) {
-                                Text(
-                                    text = "📋", // Copy icon
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+            BubbleSurface(isUser = isUser, isError = message.isError) {
+                Column {
+                    val text = message.text.trim()
+                    if (text.isNotEmpty()) {
+                        if (isUser) {
+                            Text(
+                                text = text,
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onPrimary
+                            )
+                        } else {
+                            MarkdownText(
+                                markdown = text,
+                                style = MaterialTheme.typography.bodyLarge,
+                                isError = message.isError,
+                                isStreaming = isStreaming && message.role == Role.ASSISTANT
+                            )
                         }
-                        
-                        // Only show resend button for user messages if callback is provided
-                        if (message.role == Role.USER && onResendMessage != null) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            IconButton(
-                                onClick = { onResendMessage(message) },
-                                modifier = Modifier.size(24.dp)
-                            ) {
-                                Text(
-                                    text = "↩️", // Resend icon
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
+                    }
+                    val images = message.images
+                    if (images.isNotEmpty()) {
+                        Spacer(Modifier.height(if (text.isNotEmpty()) 8.dp else 0.dp))
+                        Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            for (img in images) ImageAttachment(img)
                         }
-                        
-                        // Delete message button
-                        if (onDeleteMessage != null) {
-                            Spacer(modifier = Modifier.width(8.dp))
-                            IconButton(
-                                onClick = { onDeleteMessage(message.id) },
-                                modifier = Modifier.size(24.dp)
-                            ) {
-                                Text(
-                                    text = "🗑️", // Delete icon
-                                    style = MaterialTheme.typography.bodySmall
-                                )
-                            }
-                        }
+                    }
+                    if (isStreaming && message.role == Role.ASSISTANT && text.isNotEmpty()) {
+                        StreamingCaret()
                     }
                 }
             }
-            
-            if (isUserMessage) {
-                Spacer(modifier = Modifier.width(8.dp))
-                // User avatar
-                Box(
-                    modifier = Modifier
-                        .size(32.dp)
-                        .clip(CircleShape)
-                        .background(MaterialTheme.colorScheme.primary),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(
-                        text = "👤",
-                        style = MaterialTheme.typography.bodyLarge,
-                        textAlign = TextAlign.Center
-                    )
-                }
+            if (message.modelName != null && !isUser) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = message.modelName,
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
             }
+            ActionRow(
+                isUser = isUser,
+                onCopy = { onCopy(message.text) },
+                onResend = if (isUser) ({ onResend(message) }) else null,
+                onDelete = { onDelete(message.id) }
+            )
         }
+        if (isUser) UserAvatar()
     }
 }
+
+@Composable
+private fun AssistantAvatar() {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.primaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        Text("🐱", style = MaterialTheme.typography.titleMedium)
+    }
+}
+
+@Composable
+private fun UserAvatar() {
+    Box(
+        modifier = Modifier
+            .size(32.dp)
+            .clip(CircleShape)
+            .background(MaterialTheme.colorScheme.tertiaryContainer),
+        contentAlignment = Alignment.Center
+    ) {
+        Text(
+            "Y",
+            color = MaterialTheme.colorScheme.onTertiaryContainer,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+    }
+}
+
+@Composable
+private fun BubbleSurface(
+    isUser: Boolean,
+    isError: Boolean,
+    content: @Composable () -> Unit
+) {
+    val (container, _) = when {
+        isError -> MaterialTheme.colorScheme.errorContainer to MaterialTheme.colorScheme.onErrorContainer
+        isUser -> MaterialTheme.colorScheme.primary to MaterialTheme.colorScheme.onPrimary
+        else -> MaterialTheme.colorScheme.surfaceVariant to MaterialTheme.colorScheme.onSurfaceVariant
+    }
+    val shape = RoundedCornerShape(
+        topStart = 18.dp,
+        topEnd = 18.dp,
+        bottomStart = if (isUser) 18.dp else 4.dp,
+        bottomEnd = if (isUser) 4.dp else 18.dp
+    )
+    Surface(
+        color = container,
+        shape = shape,
+        tonalElevation = 0.dp
+    ) {
+        Box(modifier = Modifier.padding(horizontal = 14.dp, vertical = 10.dp)) { content() }
+    }
+}
+
+@Composable
+private fun ImageAttachment(image: ContentPart.Image) {
+    val (data, isBase64) = when (val src = image.source) {
+        is ImageSource.Url -> src.url to false
+        is ImageSource.Base64 -> src.data to true
+        is ImageSource.Local -> src.path to false
+    }
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        modifier = Modifier.heightIn(max = 280.dp).widthIn(max = 360.dp)
+    ) {
+        PlatformImage(data = data, isBase64 = isBase64, contentDescription = image.caption)
+    }
+}
+
+@Composable
+private fun StreamingCaret() {
+    val alpha by animateFloatAsState(
+        targetValue = 0.3f,
+        animationSpec = tween(durationMillis = 600),
+        label = "caret"
+    )
+    Spacer(Modifier.height(2.dp))
+    Box(
+        modifier = Modifier
+            .size(width = 8.dp, height = 14.dp)
+            .background(
+                color = MaterialTheme.colorScheme.primary.copy(alpha = alpha),
+                shape = RoundedCornerShape(2.dp)
+            )
+    )
+}
+
+@Composable
+private fun ActionRow(
+    isUser: Boolean,
+    onCopy: () -> Unit,
+    onResend: (() -> Unit)?,
+    onDelete: () -> Unit
+) {
+    Row(modifier = Modifier.padding(top = 4.dp), verticalAlignment = Alignment.CenterVertically) {
+        SmallIconButton(Icons.Outlined.ContentCopy, "Copy", onCopy)
+        if (onResend != null) SmallIconButton(Icons.Outlined.Refresh, "Resend", onResend)
+        SmallIconButton(Icons.Outlined.DeleteOutline, "Delete", onDelete)
+    }
+}
+
+@Composable
+private fun SmallIconButton(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    contentDescription: String,
+    onClick: () -> Unit
+) {
+    IconButton(onClick = onClick, modifier = Modifier.size(28.dp)) {
+        Icon(
+            imageVector = icon,
+            contentDescription = contentDescription,
+            modifier = Modifier.size(16.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+    }
+}
+

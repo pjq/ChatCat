@@ -5,277 +5,254 @@ import androidx.lifecycle.viewModelScope
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import me.pjq.chatcat.di.AppModule
+import me.pjq.chatcat.model.ContentPart
 import me.pjq.chatcat.model.Conversation
+import me.pjq.chatcat.model.McpTool
 import me.pjq.chatcat.model.Message
 import me.pjq.chatcat.model.Role
+import me.pjq.chatcat.platform.randomUUID
 import me.pjq.chatcat.repository.ConversationRepository
 import me.pjq.chatcat.repository.PreferencesRepository
 import me.pjq.chatcat.service.ChatService
-import java.util.UUID
+import me.pjq.chatcat.service.ImageGenerationService
+import me.pjq.chatcat.service.McpClientService
 
-class ChatViewModel : ViewModel() {
-    private val conversationRepository: ConversationRepository = AppModule.conversationRepository
-    private val chatService: ChatService = AppModule.chatService
+class ChatViewModel(
+    private val conversationRepository: ConversationRepository = AppModule.conversationRepository,
+    private val chatService: ChatService = AppModule.chatService,
+    private val imageGenerationService: ImageGenerationService = AppModule.imageGenerationService,
+    private val mcpClient: McpClientService = AppModule.mcpClient,
     private val preferencesRepository: PreferencesRepository = AppModule.preferencesRepository
-    private val settingsViewModel: SettingsViewModel = AppModule.settingsViewModel
-    
+) : ViewModel() {
+
     private val _uiState = MutableStateFlow(ChatUiState())
     val uiState: StateFlow<ChatUiState> = _uiState.asStateFlow()
-    
+
     private var currentConversationId: String? = null
-    
+
     init {
-        loadConversations()
-        loadAvailableModels()
-        observeSettings()
+        observeConversations()
+        observePreferences()
     }
 
-    private fun observeSettings() {
+    private fun observeConversations() {
         viewModelScope.launch {
-            settingsViewModel.uiState.collect { settingsUiState ->
+            conversationRepository.getConversations().collectLatest { conversations ->
+                _uiState.update { state ->
+                    val current = currentConversationId?.let { id -> conversations.find { it.id == id } }
+                        ?: state.currentConversation
+                    state.copy(conversations = conversations, currentConversation = current)
+                }
+            }
+        }
+    }
+
+    private fun observePreferences() {
+        viewModelScope.launch {
+            preferencesRepository.getUserPreferences().collectLatest { prefs ->
+                val active = prefs.modelProviders.firstOrNull { it.id == prefs.activeProviderId }
                 _uiState.update {
                     it.copy(
-                        availableModels = settingsUiState.availableModels,
-                        selectedModel = settingsUiState.activeProvider.selectedModel
+                        availableModels = active?.availableModels ?: emptyList(),
+                        selectedModel = active?.selectedModel ?: "",
+                        canSendImages = active?.supportsVision() == true,
+                        canGenerateImages = active?.supportsImageGeneration() == true,
+                        imageGenModels = active?.imageGenModels ?: emptyList(),
+                        mcpEnabled = prefs.mcpServers.any { it.isEnabled }
                     )
                 }
             }
         }
     }
-    
-    private fun loadAvailableModels() {
+
+    fun selectConversation(id: String) {
         viewModelScope.launch {
-            settingsViewModel.loadAvailableModels()
+            val conversation = conversationRepository.getConversation(id) ?: return@launch
+            currentConversationId = id
+            _uiState.update { it.copy(currentConversation = conversation) }
         }
     }
 
-    private fun loadConversations() {
+    fun createNewConversation() {
         viewModelScope.launch {
-            conversationRepository.getConversations().collectLatest { conversations ->
-                _uiState.update { it.copy(conversations = conversations) }
-
-                // Update current conversation if it's in the list
-                currentConversationId?.let { id ->
-                    val currentConversation = conversations.find { it.id == id }
-                    if (currentConversation != null) {
-                        _uiState.update { it.copy(currentConversation = currentConversation) }
-                    }
-                }
-            }
+            val conversation = conversationRepository.createConversation("New Chat")
+            currentConversationId = conversation.id
+            _uiState.update { it.copy(currentConversation = conversation) }
         }
     }
 
-    fun selectConversation(conversationId: String) {
+    fun deleteConversation(id: String) {
         viewModelScope.launch {
-            val conversation = conversationRepository.getConversation(conversationId)
-            if (conversation != null) {
-                currentConversationId = conversationId
-                _uiState.update { it.copy(currentConversation = conversation) }
-            }
-        }
-    }
-    
-fun createNewConversation() {
-    viewModelScope.launch {
-        val conversation = conversationRepository.createConversation(generateTitleFromContent("New Chat"))
-        currentConversationId = conversation.id
-        _uiState.update { it.copy(currentConversation = conversation) }
-    }
-}
-    
-    fun deleteConversation(conversationId: String) {
-        viewModelScope.launch {
-            val success = conversationRepository.deleteConversation(conversationId)
-            if (success && conversationId == currentConversationId) {
+            val ok = conversationRepository.deleteConversation(id)
+            if (ok && id == currentConversationId) {
                 currentConversationId = null
                 _uiState.update { it.copy(currentConversation = null) }
             }
         }
     }
-    
-    fun updateConversationTitle(conversationId: String, newTitle: String) {
-        viewModelScope.launch {
-            val conversation = conversationRepository.getConversation(conversationId)
-            if (conversation != null) {
-                val updatedConversation = conversation.copy(title = newTitle)
-                conversationRepository.updateConversation(updatedConversation)
-            }
-        }
-    }
-    
+
     fun selectModel(model: String) {
         viewModelScope.launch {
-            settingsViewModel.updateModel(model)
+            val prefs = preferencesRepository.getUserPreferencesSync()
+            val updated = prefs.copy(
+                modelProviders = prefs.modelProviders.map { provider ->
+                    if (provider.id == prefs.activeProviderId) provider.copy(selectedModel = model)
+                    else provider
+                }
+            )
+            preferencesRepository.updateUserPreferences(updated)
         }
     }
 
-    fun sendMessage(content: String) {
-        if (content.isBlank()) return
-        
-        sendMessageInternal(content)
+    fun toggleStreamMode() {
+        viewModelScope.launch {
+            val prefs = preferencesRepository.getUserPreferencesSync()
+            val cfg = prefs.defaultModelConfig
+            preferencesRepository.setDefaultModelConfig(cfg.copy(stream = !cfg.stream))
+        }
     }
-    
-    /**
-     * Resends a previously sent message
-     */
+
+    fun sendMessage(text: String, attachments: List<ContentPart.Image> = emptyList()) {
+        if (text.isBlank() && attachments.isEmpty()) return
+        viewModelScope.launch {
+            val conversationId = currentConversationId ?: conversationRepository.createConversation(
+                deriveTitle(text)
+            ).also { currentConversationId = it.id }.id
+
+            val parts = buildList<ContentPart> {
+                if (text.isNotBlank()) add(ContentPart.Text(text))
+                addAll(attachments)
+            }
+            val userMessage = Message(id = randomUUID(), role = Role.USER, parts = parts)
+            conversationRepository.addMessage(conversationId, userMessage)
+
+            // Re-load conversation with the new message and trigger model call
+            val convo = conversationRepository.getConversation(conversationId) ?: return@launch
+            runChatCompletion(convo)
+
+            val first = convo.messages.firstOrNull { it.role == Role.USER }
+            if (first != null && convo.title == "New Chat" && first.text.isNotBlank()) {
+                conversationRepository.updateConversation(convo.copy(title = deriveTitle(first.text)))
+            }
+        }
+    }
+
     fun resendMessage(message: Message) {
         if (message.role != Role.USER) return
-        
-        sendMessageInternal(message.content)
+        sendMessage(text = message.text, attachments = message.images)
     }
-    
-    /**
-     * Deletes a message from the current conversation
-     */
+
     fun deleteMessage(messageId: String) {
         val conversationId = currentConversationId ?: return
-        
-        viewModelScope.launch {
-            conversationRepository.deleteMessage(conversationId, messageId)
-        }
+        viewModelScope.launch { conversationRepository.deleteMessage(conversationId, messageId) }
     }
-    
-    /**
-     * Internal implementation of sending a message
-     */
-    private fun sendMessageInternal(content: String) {
-        
-        viewModelScope.launch {
-            val conversationId = currentConversationId ?: run {
-                val newConversation = conversationRepository.createConversation(generateTitleFromContent(content))
-                currentConversationId = newConversation.id
-                newConversation.id
-            }
-            
-            // Create and add user message
-            val userMessage = Message(
-                id = UUID.randomUUID().toString(),
-                content = content,
-                role = Role.USER
-            )
-            
-            conversationRepository.addMessage(conversationId, userMessage)
-            
-            // Show loading state
-            _uiState.update { it.copy(isLoading = true) }
-            
-            // Get current conversation with the new user message
-            var conversation = conversationRepository.getConversation(conversationId)
-            if (conversation != null) {
-                // Update the conversation's model config with the latest default config
-                val currentDefaultConfig = preferencesRepository.getUserPreferencesSync().defaultModelConfig
-                
-                // Only update the conversation if the configs are different
-                if (conversation.modelConfig != currentDefaultConfig) {
-                    val updatedConversation = conversation.copy(modelConfig = currentDefaultConfig)
-                    conversationRepository.updateConversation(updatedConversation)
-                    
-                        // Update the local reference to use the updated conversation
-                    val updatedConversationWithConfig = conversationRepository.getConversation(conversationId)
-                    if (updatedConversationWithConfig != null) {
-                        _uiState.update { it.copy(currentConversation = updatedConversationWithConfig) }
-                        // Use the updated conversation from here on
-                        conversation = updatedConversationWithConfig
-                    }
-                }
-                
-                val isStreamingEnabled = conversation.modelConfig.stream
-                
-                if (isStreamingEnabled) {
-                    // Handle streaming response
-                    _uiState.update { it.copy(isStreaming = true) }
-                    
-                    var firstMessage = true
-                    var messageId: String? = null
-                    
-                    try {
-                        // Use collect instead of collectLatest for streaming
-                        chatService.sendMessage(conversation.messages, conversation.modelConfig)
-                            .collect { result ->
-                                result.fold(
-                                    onSuccess = { assistantMessage ->
-                                        if (firstMessage) {
-                                            // First message, add it to the conversation
-                                            messageId = assistantMessage.id
-                                            conversationRepository.addMessage(conversationId, assistantMessage)
-                                            firstMessage = false
-                                        } else {
-                                            // Update existing message with new content
-                                            messageId?.let { id ->
-                                                conversationRepository.updateMessage(conversationId, assistantMessage)
-                                            }
-                                        }
-                                    },
-                                    onFailure = { error ->
-                                        val errorMessage = Message(
-                                            id = UUID.randomUUID().toString(),
-                                            content = "Error: ${error.message ?: "Unknown error"}",
-                                            role = Role.ASSISTANT,
-                                            isError = true
-                                        )
-                                        conversationRepository.addMessage(conversationId, errorMessage)
-                                        _uiState.update { it.copy(isLoading = false, isStreaming = false, error = error.message) }
-                                    }
-                                )
-                            }
-                    } catch (e: Exception) {
-                        // Handle any exceptions during streaming
-                        val errorMessage = Message(
-                            id = UUID.randomUUID().toString(),
-                            content = "Error: ${e.message ?: "Unknown error"}",
-                            role = Role.ASSISTANT,
-                            isError = true
-                        )
-                        conversationRepository.addMessage(conversationId, errorMessage)
-                        _uiState.update { it.copy(isLoading = false, isStreaming = false, error = e.message) }
-                    } finally {
-                        // After collection is complete, update UI state
-                        _uiState.update { it.copy(isLoading = false, isStreaming = false, error = null) }
-                    }
-                } else {
-                    // Handle non-streaming response
-                    chatService.sendMessage(conversation.messages, conversation.modelConfig)
-                        .collectLatest { result ->
-                            result.fold(
-                                onSuccess = { assistantMessage ->
-                                    conversationRepository.addMessage(conversationId, assistantMessage)
-                                    _uiState.update { it.copy(isLoading = false, error = null) }
-                                },
-                                onFailure = { error ->
-                                    val errorMessage = Message(
-                                        id = UUID.randomUUID().toString(),
-                                        content = "Error: ${error.message ?: "Unknown error"}",
-                                        role = Role.ASSISTANT,
-                                        isError = true
-                                    )
-                                    conversationRepository.addMessage(conversationId, errorMessage)
-                                    _uiState.update { it.copy(isLoading = false, error = error.message) }
-                                }
-                            )
-                        }
-                }
-            } else {
-                _uiState.update { it.copy(isLoading = false, error = "Conversation not found") }
-            }
-        }
-    }
-    
-    fun cancelRequest() {
+
+    fun cancel() {
         chatService.cancelRequest()
         _uiState.update { it.copy(isLoading = false, isStreaming = false) }
     }
-    
-    private fun generateTitleFromContent(content: String): String {
-        return if (content.length > 30) {
-            content.take(30) + "..."
-        } else {
-            content
+
+    fun generateImage(prompt: String) {
+        viewModelScope.launch {
+            val prefs = preferencesRepository.getUserPreferencesSync()
+            val provider = prefs.modelProviders.firstOrNull { it.id == prefs.activeProviderId } ?: return@launch
+            val model = provider.imageGenModels.firstOrNull() ?: return@launch
+            val conversationId = currentConversationId ?: conversationRepository.createConversation(
+                deriveTitle(prompt)
+            ).also { currentConversationId = it.id }.id
+
+            val userMessage = Message(
+                id = randomUUID(),
+                role = Role.USER,
+                parts = listOf(ContentPart.Text("🎨 Generate: $prompt"))
+            )
+            conversationRepository.addMessage(conversationId, userMessage)
+            _uiState.update { it.copy(isLoading = true) }
+
+            val result = imageGenerationService.generate(prompt = prompt, model = model)
+            result.fold(
+                onSuccess = { images ->
+                    val assistant = Message(
+                        id = randomUUID(),
+                        role = Role.ASSISTANT,
+                        parts = images,
+                        modelName = model
+                    )
+                    conversationRepository.addMessage(conversationId, assistant)
+                },
+                onFailure = { err ->
+                    val errorMessage = Message.text(
+                        id = randomUUID(),
+                        role = Role.ASSISTANT,
+                        text = "Image generation failed: ${err.message}",
+                        isError = true
+                    )
+                    conversationRepository.addMessage(conversationId, errorMessage)
+                    _uiState.update { it.copy(error = err.message) }
+                }
+            )
+            _uiState.update { it.copy(isLoading = false) }
         }
+    }
+
+    private suspend fun runChatCompletion(conversation: Conversation) {
+        _uiState.update { it.copy(isLoading = true, isStreaming = conversation.modelConfig.stream, error = null) }
+        val tools = collectMcpTools(conversation)
+
+        var assistantId: String? = null
+        try {
+            chatService.sendMessage(
+                messages = conversation.messages,
+                modelConfig = conversation.modelConfig,
+                availableTools = tools,
+                systemPrompt = conversation.systemPrompt
+                    ?: preferencesRepository.getUserPreferencesSync().systemPrompt.takeIf { it.isNotBlank() }
+            ).collect { result ->
+                result.fold(
+                    onSuccess = { partial ->
+                        if (assistantId == null) {
+                            assistantId = partial.id
+                            conversationRepository.addMessage(conversation.id, partial)
+                        } else {
+                            conversationRepository.updateMessage(conversation.id, partial)
+                        }
+                    },
+                    onFailure = { err ->
+                        val errMsg = Message.text(
+                            id = randomUUID(),
+                            role = Role.ASSISTANT,
+                            text = "Error: ${err.message ?: "unknown"}",
+                            isError = true
+                        )
+                        conversationRepository.addMessage(conversation.id, errMsg)
+                        _uiState.update { it.copy(error = err.message) }
+                    }
+                )
+            }
+        } finally {
+            _uiState.update { it.copy(isLoading = false, isStreaming = false) }
+        }
+    }
+
+    private suspend fun collectMcpTools(conversation: Conversation): List<McpTool> {
+        val prefs = preferencesRepository.getUserPreferencesSync()
+        val enabledServers = prefs.mcpServers.filter {
+            it.isEnabled && (conversation.enabledMcpServerIds.isEmpty() || it.id in conversation.enabledMcpServerIds)
+        }
+        if (enabledServers.isEmpty()) return emptyList()
+        return enabledServers.flatMap { server ->
+            mcpClient.listTools(server).getOrDefault(server.knownTools)
+        }
+    }
+
+    private fun deriveTitle(content: String): String {
+        if (content.isBlank()) return "New Chat"
+        val firstLine = content.lineSequence().firstOrNull { it.isNotBlank() }?.trim().orEmpty()
+        return if (firstLine.length > 32) firstLine.take(32) + "…" else firstLine
     }
 }
 
@@ -286,5 +263,9 @@ data class ChatUiState(
     val isStreaming: Boolean = false,
     val error: String? = null,
     val availableModels: List<String> = emptyList(),
-    val selectedModel: String = ""
+    val selectedModel: String = "",
+    val canSendImages: Boolean = false,
+    val canGenerateImages: Boolean = false,
+    val imageGenModels: List<String> = emptyList(),
+    val mcpEnabled: Boolean = false
 )
