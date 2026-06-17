@@ -233,6 +233,15 @@ class ChatViewModel(
                     }
                 )
             }
+        } catch (e: Exception) {
+            val errMsg = Message.text(
+                id = randomUUID(),
+                role = Role.ASSISTANT,
+                text = "Error: ${e.message ?: "Request failed"}",
+                isError = true
+            )
+            conversationRepository.addMessage(conversation.id, errMsg)
+            _uiState.update { it.copy(error = e.message) }
         } finally {
             _uiState.update { it.copy(isLoading = false, isStreaming = false) }
         }
