@@ -40,6 +40,7 @@ class SettingsViewModel(
 
     init {
         viewModelScope.launch {
+            var lastProviderId: String? = null
             preferencesRepository.getUserPreferences().collectLatest { prefs ->
                 val active = prefs.modelProviders.firstOrNull { it.id == prefs.activeProviderId }
                     ?: DefaultModelProviders.OPENAI
@@ -49,6 +50,10 @@ class SettingsViewModel(
                         activeProvider = active,
                         availableModels = active.availableModels
                     )
+                }
+                if (lastProviderId != active.id) {
+                    lastProviderId = active.id
+                    refreshAvailableModels()
                 }
             }
         }

@@ -118,7 +118,7 @@ fun ChatInput(
                         modifier = Modifier.padding(horizontal = 6.dp, vertical = 4.dp),
                         verticalAlignment = Alignment.Bottom
                     ) {
-                        if (canSendImages && onPickImage != null) {
+                        if (onPickImage != null) {
                             IconButton(onClick = onPickImage, modifier = Modifier.size(40.dp)) {
                                 Icon(
                                     Icons.Outlined.AddPhotoAlternate,

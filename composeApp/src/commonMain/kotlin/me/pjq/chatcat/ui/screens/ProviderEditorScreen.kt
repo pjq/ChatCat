@@ -151,6 +151,26 @@ fun ProviderEditorScreen(
 
     val canSave = name.isNotBlank() && baseUrl.isNotBlank()
 
+    // Auto-fetch models when editing an existing provider with credentials
+    androidx.compose.runtime.LaunchedEffect(Unit) {
+        if (!isNew && baseUrl.isNotBlank()) {
+            probeState = ProbeState.Loading
+            val result = viewModel.probeProvider(baseUrl, apiKey)
+            result.fold(
+                onSuccess = { models ->
+                    if (models.isNotEmpty()) {
+                        availableModels = models
+                        probeState = ProbeState.Success
+                        probeMessage = "${models.size} models available"
+                    } else {
+                        probeState = ProbeState.Idle
+                    }
+                },
+                onFailure = { probeState = ProbeState.Idle }
+            )
+        }
+    }
+
     Scaffold(
         modifier = modifier,
         topBar = {

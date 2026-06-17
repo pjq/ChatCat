@@ -18,8 +18,8 @@ data class ModelProvider(
     val supportsTools: Boolean = true
 ) {
     fun supportsVision(model: String = selectedModel): Boolean =
-        model in visionModels || model.contains("vision") || model.startsWith("gpt-4o") ||
-            model.startsWith("gpt-4.1") || model.startsWith("claude-3") || model.contains("gemini")
+        model in visionModels || model.contains("vision") ||
+            model.contains("gpt-") || model.contains("claude") || model.contains("gemini")
 
     fun supportsImageGeneration(): Boolean = imageGenModels.isNotEmpty()
 }

@@ -4,20 +4,17 @@ import androidx.compose.material3.LocalContentColor
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.style.TextDecoration
 import com.mikepenz.markdown.compose.Markdown
+import kotlinx.coroutines.delay
 
-/**
- * A composable that renders Markdown text using the multiplatform-markdown-renderer library.
- *
- * @param markdown The Markdown text to render
- * @param modifier The modifier to be applied to the composable
- * @param style The text style to apply to the rendered Markdown
- * @param isError Whether the text should be displayed as an error
- * @param useMarkdownRenderer Whether to use the markdown renderer or simple Text component
- */
 @Composable
 fun MarkdownText(
     markdown: String,
@@ -27,11 +24,19 @@ fun MarkdownText(
     useMarkdownRenderer: Boolean = true,
     isStreaming: Boolean = false
 ) {
-    // During streaming, use simple text to avoid repeated expensive parsing
-    val effectiveUseMarkdown = useMarkdownRenderer && !isStreaming
-    
-    if (effectiveUseMarkdown) {
-        // Create typography using DefaultMarkdownTypography with the provided style
+    // During streaming, throttle markdown re-renders every ~300ms for performance
+    val renderedContent = if (isStreaming && useMarkdownRenderer) {
+        var throttled by remember { mutableStateOf(markdown) }
+        LaunchedEffect(markdown) {
+            delay(300)
+            throttled = markdown
+        }
+        throttled
+    } else {
+        markdown
+    }
+
+    if (useMarkdownRenderer) {
         val typography = com.mikepenz.markdown.model.DefaultMarkdownTypography(
             h1 = style,
             h2 = style,
@@ -55,7 +60,6 @@ fun MarkdownText(
             table = style
         )
 
-        // Create colors with error handling and all required parameters
         val textColor = if (isError) MaterialTheme.colorScheme.error else LocalContentColor.current
         val colors = com.mikepenz.markdown.model.DefaultMarkdownColors(
             text = textColor,
@@ -70,13 +74,12 @@ fun MarkdownText(
         )
 
         Markdown(
-            content = markdown,
+            content = renderedContent,
             modifier = modifier,
             colors = colors,
             typography = typography
         )
     } else {
-        // Use simple Text component when markdown rendering is disabled
         Text(
             text = markdown,
             modifier = modifier,

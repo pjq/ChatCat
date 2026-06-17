@@ -155,8 +155,18 @@ fun ChatScreen(
                 val messages = uiState.currentConversation?.messages ?: emptyList()
                 val listState = rememberLazyListState()
 
-                LaunchedEffect(messages.size, messages.lastOrNull()?.text?.length) {
-                    if (messages.isNotEmpty()) listState.animateScrollToItem(messages.lastIndex)
+                // Scroll to bottom on new messages and during streaming
+                val lastMessageLength = messages.lastOrNull()?.text?.length ?: 0
+                LaunchedEffect(messages.size, lastMessageLength / 20) {
+                    if (messages.isNotEmpty()) {
+                        listState.animateScrollToItem(messages.lastIndex)
+                    }
+                }
+                // Immediate scroll (no animation) during active streaming for smoothness
+                LaunchedEffect(uiState.isStreaming, lastMessageLength) {
+                    if (uiState.isStreaming && messages.isNotEmpty()) {
+                        listState.scrollToItem(messages.lastIndex)
+                    }
                 }
 
                 if (messages.isEmpty()) {
@@ -213,7 +223,7 @@ fun ChatScreen(
                         viewModel.sendMessage(text, attachments)
                         pendingImages.clear()
                     },
-                    onPickImage = if (uiState.canSendImages && picker.isAvailable) ({ picker.launch() }) else null,
+                    onPickImage = if (picker.isAvailable) ({ picker.launch() }) else null,
                     onGenerateImage = if (uiState.canGenerateImages) viewModel::generateImage else null,
                     onCancel = viewModel::cancel,
                     pendingImages = pendingImages.toList(),
